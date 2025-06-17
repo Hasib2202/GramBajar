@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 95%; /* #F2F2F2 */
+  --foreground: 200 13% 15%; /* #182628 */
+  --primary: 170 51% 67%; /* #65CCB8 */
+  --primary-foreground: 200 13% 15%; /* #182628 */
+  --secondary: 160 42% 52%; /* #57BA98 */
+  --secondary-foreground: 240 10% 95%; /* #F2F2F2 */
+  --accent: 150 45% 40%; /* #3B945E */
+  --accent-foreground: 240 10% 95%; /* #F2F2F2 */
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-dark hover:bg-accent transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-light hover:bg-accent transition-colors;
+  }
+}
