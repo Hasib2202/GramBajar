@@ -32,6 +32,7 @@ const LoginForm = () => {
 
     if (verification === 'success') {
       setSuccess('Email verified successfully! You can now login.');
+       window.history.replaceState({}, document.title, window.location.pathname);
     }
     if (loginSuccess === 'success') {
       setSuccess('Login successful!');

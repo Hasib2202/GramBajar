@@ -154,8 +154,9 @@ export const verifyEmail = async (req, res) => {
 
   if (!token) {
     return res.status(400).json({
+      success: false,
       message: 'Verification token is required',
-      solution: `Please use a valid verification link sent to your email`
+      solution: 'Please use the verification link sent to your email'
     });
   }
 
@@ -165,6 +166,7 @@ export const verifyEmail = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
+        success: false,
         message: 'User not found',
         solution: 'Please register again'
       });
@@ -172,6 +174,7 @@ export const verifyEmail = async (req, res) => {
 
     if (user.isVerified) {
       return res.status(200).json({
+        success: true,
         message: 'Email already verified',
         solution: 'You can login directly'
       });
@@ -180,18 +183,31 @@ export const verifyEmail = async (req, res) => {
     user.isVerified = true;
     await user.save();
 
-    // Redirect to frontend with success message
-    res.redirect(`${process.env.FRONTEND_URL}/auth/login?verification=success`);
+    res.json({ 
+      success: true,
+      message: 'Email verified successfully' 
+    });
+
+    user.isVerified = true;
+    await user.save();
+
+    // Return success response instead of redirecting
+    res.json({ 
+      success: true,
+      message: 'Email verified successfully',
+      redirect: `${process.env.FRONTEND_URL}/auth/login?verification=success`
+    });
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       return res.status(400).json({
+        success: false,
         message: 'Verification link has expired',
         solution: 'Request a new verification email'
       });
     }
 
-    console.error('Token verification error:', error);
     res.status(400).json({
+      success: false,
       message: 'Invalid verification token',
       error: error.message
     });
