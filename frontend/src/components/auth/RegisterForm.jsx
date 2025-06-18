@@ -38,33 +38,63 @@ const RegisterPage = () => {
   };
 
   const validateForm = () => {
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return false;
-    }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return false;
-    }
-    return true;
-  };
+  const { name, email, password, confirmPassword } = formData;
+
+  // Check for empty fields
+  if (!name || !email || !password || !confirmPassword) {
+    setError('All fields are required');
+    return false;
+  }
+
+  // Email format check (basic)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    setError('Please enter a valid email address');
+    return false;
+  }
+
+  // Password length check
+  if (password.length < 8) {
+    setError('Password must be at least 8 characters long');
+    return false;
+  }
+
+  // Confirm password match
+  if (password !== confirmPassword) {
+    setError('Passwords do not match');
+    return false;
+  }
+
+  // Clear any previous errors
+  setError('');
+  return true;
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
 
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
+    if (!validateForm()) {
+    setLoading(false);
+    return;
+  }
 
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/register`, 
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            password: formData.password
         }),
       });
 
@@ -90,7 +120,15 @@ const RegisterPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/google';
+    // Clear existing Google session
+    // window.open('https://accounts.google.com/logout', '_blank');
+
+    // Add random state parameter
+    const state = Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('oauth_state', state);
+
+    // Redirect to Google auth with fresh prompt
+    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google?prompt=select_account`;
   };
 
   if (registrationComplete) {

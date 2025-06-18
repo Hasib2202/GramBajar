@@ -73,7 +73,7 @@ export default function Navbar({ darkMode, toggleTheme }) {
             darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
           }`}>
             <FiUser />
-            <span>Login</span>
+            <span>Sign In</span>
           </a>
 
           {/* Mobile Menu Toggle */}
@@ -114,7 +114,7 @@ export default function Navbar({ darkMode, toggleTheme }) {
               darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
             }`}>
               <FiUser />
-              <span>Login</span>
+              <span>Sign In</span>
             </a>
           </div>
         </div>
