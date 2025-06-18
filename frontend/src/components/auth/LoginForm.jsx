@@ -33,9 +33,9 @@ export default function LoginForm() {
             id="email"
             type="email"
             {...register('email', { required: 'Email is required' })}
-            className="border-secondary mt-1"
+            className="mt-1 border-secondary"
           />
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+          {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
         </div>
         
         <div>
@@ -44,20 +44,20 @@ export default function LoginForm() {
             id="password"
             type="password"
             {...register('password', { required: 'Password is required' })}
-            className="border-secondary mt-1"
+            className="mt-1 border-secondary"
           />
-          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+          {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
         </div>
         
-        <Button type="submit" className="w-full btn-primary py-2">
+        <Button type="submit" className="w-full py-2 btn-primary">
           Login
         </Button>
       </form>
       
-      <div className="text-center mt-4">
+      <div className="mt-4 text-center">
         <a 
           href="/forgot-password" 
-          className="text-secondary hover:text-accent underline"
+          className="underline text-secondary hover:text-accent"
         >
           Forgot Password?
         </a>
@@ -74,15 +74,15 @@ export default function LoginForm() {
       
       <Button 
         type="button" 
-        className="w-full btn-secondary py-2"
+        className="w-full py-2 btn-secondary"
       >
         Sign in with Google
       </Button>
       
-      <div className="text-center mt-6">
+      <div className="mt-6 text-center">
         <p className="text-dark">
           Don't have an account?{' '}
-          <a href="/register" className="text-accent hover:text-secondary font-medium">
+          <a href="/register" className="font-medium text-accent hover:text-secondary">
             Sign up
           </a>
         </p>

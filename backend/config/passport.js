@@ -1,4 +1,4 @@
-// config/googleStrategy.js
+// config/passport.js
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../models/User.js';
@@ -7,12 +7,15 @@ const configurePassport = () => {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/api/auth/google/callback'
+    callbackURL: `${process.env.BACKEND_URL}/api/auth/google/callback`,
+    passReqToCallback: true
   },
-  async (accessToken, refreshToken, profile, done) => {
+  async (req, accessToken, refreshToken, profile, done) => {
     try {
+      console.log('Google profile received:', profile);
+      
       // Find user by Google ID or email
-      let user = await User.findOne({ 
+      let user = await User.findOne({
         $or: [
           { googleId: profile.id },
           { email: profile.emails[0].value }
@@ -27,17 +30,21 @@ const configurePassport = () => {
           googleId: profile.id,
           provider: 'google',
           isVerified: true,
-          image: profile.photos[0].value
+          image: profile.photos?.[0]?.value.replace('=s96-c', '=s400-c')
         });
-      } else if (!user.googleId) {
-        // Link Google account to existing user
-        user.googleId = profile.id;
-        user.provider = 'google';
+        console.log('New Google user created:', user.email);
+      } else {
+        // Update existing user
+        if (!user.googleId) user.googleId = profile.id;
+        if (!user.image) user.image = profile.photos?.[0]?.value;
+        user.isVerified = true;
         await user.save();
+        console.log('Existing user updated with Google:', user.email);
       }
 
       return done(null, user);
     } catch (error) {
+      console.error('Google authentication error:', error);
       return done(error, null);
     }
   }));

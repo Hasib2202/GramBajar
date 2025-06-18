@@ -87,15 +87,51 @@ export const sendVerificationEmail = async (email, token) => {
 export const sendPasswordResetEmail = async (email, token) => {
   try {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-    
+
     const mailOptions = {
-      from: `"GramBajar" <${process.env.EMAIL_USER}>`,
+      from: `GramBajar <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Password Reset Request',
       html: `
-        <p>You requested a password reset for your GramBajar account.</p>
-        <p>Click <a href="${resetUrl}">here</a> to reset your password</p>
-        <p>This link will expire in 10 minutes.</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+          <div style="background-color: #F57C00; padding: 20px; text-align: center;">
+            <h1 style="color: white; margin: 0;">Password Reset Request</h1>
+          </div>
+
+          <div style="padding: 30px;">
+            <p>Hello,</p>
+            <p>We received a request to reset your GramBajar account password. If you made this request, click the button below:</p>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" 
+                 style="display: inline-block; 
+                        background-color: #EF6C00; 
+                        color: white; 
+                        padding: 12px 24px; 
+                        text-decoration: none; 
+                        border-radius: 4px; 
+                        font-weight: bold;
+                        font-size: 16px;">
+                Reset Password
+              </a>
+            </div>
+
+            <p>This password reset link will expire in 10 minutes.</p>
+
+            <p style="font-size: 14px; color: #777; text-align: center;">
+              <strong>Didn’t request a password reset?</strong><br>
+              If you didn’t request this, you can safely ignore this email.
+            </p>
+
+            <p>Best regards,<br>The GramBajar Team</p>
+          </div>
+
+          <div style="background-color: #F2F2F2; padding: 20px; text-align: center; color: #182628; font-size: 12px;">
+            <p>© ${new Date().getFullYear()} GramBajar. All rights reserved.</p>
+            <p>You are receiving this email because a password reset was requested for your GramBajar account.</p>
+            <p><a href="${process.env.FRONTEND_URL}/unsubscribe" style="color: #FF9800;">Unsubscribe</a></p>
+          </div>
+        </div>
       `
     };
 

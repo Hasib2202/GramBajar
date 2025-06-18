@@ -2,8 +2,9 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/emailSender.js';
+import passport from 'passport';
 
-// controllers/authController.js
+// User registration
 export const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -27,7 +28,8 @@ export const registerUser = async (req, res) => {
     try {
       await sendVerificationEmail(email, token);
       res.status(201).json({
-        message: 'Registration successful! Please check your email for verification'
+        message: 'Registration successful! Please check your email for verification',
+        token: token
       });
     } catch (emailError) {
       console.error('Email sending failed:', emailError);
@@ -106,6 +108,7 @@ export const resetPassword = async (req, res) => {
     await user.save();
 
     res.json({ message: 'Password reset successfully' });
+    
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       return res.status(400).json({ 
@@ -116,12 +119,38 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// verify login
+// Password reset request
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '10m'
+    });
+
+    await sendPasswordResetEmail(email, resetToken);
+    res.json({ 
+      message: 'Password reset email sent',
+      resetToken: resetToken // Include the token in the response
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+
+// verify email
 export const verifyEmail = async (req, res) => {
   const { token } = req.query;
 
   if (!token) {
-    return res.status(400).json({ message: 'Verification token is required' });
+    return res.status(400).json({ 
+      message: 'Verification token is required',
+      solution: `Please use a valid verification link sent to your email`
+    });
   }
 
   try {
@@ -129,39 +158,82 @@ export const verifyEmail = async (req, res) => {
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ 
+        message: 'User not found',
+        solution: 'Please register again'
+      });
     }
 
     if (user.isVerified) {
-      return res.status(400).json({ message: 'Email already verified' });
+      return res.status(200).json({ 
+        message: 'Email already verified',
+        solution: 'You can login directly'
+      });
     }
 
     user.isVerified = true;
     await user.save();
 
-    res.json({ message: 'Email verified successfully! You can now login.' });
+    // Redirect to frontend with success message
+    res.redirect(`${process.env.FRONTEND_URL}/auth/login?verification=success`);
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      return res.status(400).json({ message: 'Verification link has expired' });
+      return res.status(400).json({ 
+        message: 'Verification link has expired',
+        solution: 'Request a new verification email'
+      });
     }
-    res.status(400).json({ message: 'Invalid verification token' });
+    
+    console.error('Token verification error:', error);
+    res.status(400).json({ 
+      message: 'Invalid verification token',
+      error: error.message 
+    });
   }
 };
 
-// In authController.js
+// controllers/authController.js
+export const resendVerification = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.isVerified) return res.status(400).json({ message: 'Email already verified' });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { 
+      expiresIn: '1d' 
+    });
+
+    await sendVerificationEmail(email, token);
+    
+    res.json({ message: 'Verification email resent successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// controllers/authController.js
 export const googleLogin = (req, res, next) => {
   passport.authenticate('google', {
     scope: ['profile', 'email'],
-    session: false
+    session: false,
+    state: JSON.stringify(req.query) // Preserve any query params
   })(req, res, next);
 };
 
 export const googleCallback = (req, res, next) => {
-  passport.authenticate('google', { session: false }, (err, user) => {
+  passport.authenticate('google', { 
+    session: false, 
+    failureRedirect: `${process.env.FRONTEND_URL}/login?error=google-auth-failed` 
+  }, (err, user) => {
     if (err || !user) {
-      return res.status(401).json({ 
-        message: 'Google authentication failed' 
-      });
+      console.error('Google auth failed:', err);
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=google-auth-failed`);
     }
 
     // Generate JWT token
@@ -173,9 +245,13 @@ export const googleCallback = (req, res, next) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000 // 1 day
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      sameSite: 'lax'
     });
 
-    res.redirect(process.env.FRONTEND_URL);
+    // Redirect to frontend with success
+    const state = req.query.state ? JSON.parse(req.query.state) : {};
+    const redirectUrl = state.redirect || process.env.FRONTEND_URL;
+    res.redirect(`${redirectUrl}?login=success`);
   })(req, res, next);
 };

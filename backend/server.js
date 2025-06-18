@@ -6,7 +6,8 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import urlRoutes from './routes/urlRoutes.js';
 import passport from 'passport';
-import configurePassport from './config/googleStrategy.js';
+import configurePassport from './config/passport.js';
+import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
 const app = express();
@@ -14,12 +15,13 @@ const app = express();
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL,
-  credentials: true
+  credentials: true,
+   methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 app.use(express.json());
 app.use(cookieParser());
 
-// After other middleware
+// Passport configuration
 configurePassport();
 app.use(passport.initialize());
 
@@ -30,5 +32,13 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/', urlRoutes);
 
+// Error handling middleware
+app.use(notFound);
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL}`);
+  console.log(`Google Callback: ${process.env.BACKEND_URL}/api/auth/google/callback`);
+});

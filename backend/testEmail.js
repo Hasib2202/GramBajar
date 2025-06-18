@@ -1,4 +1,3 @@
-// backend/testEmail.js
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 
@@ -9,13 +8,13 @@ const testEmail = async () => {
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
+      pass: process.env.EMAIL_PASS  // Must be App Password
     }
   });
 
   try {
     const info = await transporter.sendMail({
-      from: `"GramBajar" <${process.env.EMAIL_USER}>`,
+      from: `GramBajar <${process.env.EMAIL_USER}>`,
       to: 'gpacerp04@gmail.com',
       subject: 'Test Email',
       text: 'This is a test email from GramBajar'
