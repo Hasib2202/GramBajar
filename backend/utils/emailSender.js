@@ -142,3 +142,38 @@ export const sendPasswordResetEmail = async (email, token) => {
     throw error;
   }
 };
+
+
+// utils/emailTemplates.js
+export const passwordResetTemplate = (resetToken) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #4f46e5;">Password Reset Request</h2>
+    <p>We received a request to reset your password. Click the link below to proceed:</p>
+    <p>
+      <a href="${process.env.FRONTEND_URL}/reset-password?token=${resetToken}" 
+         style="display: inline-block; padding: 10px 20px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 4px;">
+        Reset Password
+      </a>
+    </p>
+    <p>If you didn't request this, please ignore this email.</p>
+    <p style="margin-top: 30px; font-size: 0.9em; color: #6b7280;">
+      This link will expire in 10 minutes.
+    </p>
+  </div>
+`;
+
+export const verificationTemplate = (verificationToken) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #4f46e5;">Verify Your Email</h2>
+    <p>Thank you for registering! Please verify your email address to activate your account:</p>
+    <p>
+      <a href="${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}" 
+         style="display: inline-block; padding: 10px 20px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 4px;">
+        Verify Email
+      </a>
+    </p>
+    <p style="margin-top: 30px; font-size: 0.9em; color: #6b7280;">
+      This link will expire in 24 hours.
+    </p>
+  </div>
+`;

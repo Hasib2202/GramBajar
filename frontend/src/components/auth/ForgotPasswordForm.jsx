@@ -1,73 +1,111 @@
-// src/components/auth/ForgotPasswordForm.jsx
-import { useForm } from 'react-hook-form';
-import api from '@/lib/axios';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useState } from 'react'; // Add this import
+// pages/forgot-password.js
+import React, { useState } from 'react';
+import { Mail } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import Link from 'next/link';
 
-export default function ForgotPasswordForm() {
-  const { register, handleSubmit, formState: { errors } } = useForm();
-  const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+const ForgotPasswordForm = () => {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const onSubmit = async (data) => {
-    setIsLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      await api.post('/auth/forgot-password', { email: data.email });
-      setMessage('Password reset email sent. Please check your inbox.');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/forgot-password`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess('Password reset email sent! Check your inbox.');
+      } else {
+        setError(data.message || 'Failed to send reset email');
+      }
     } catch (error) {
-      setMessage('Failed to send reset email. Please try again.');
+      setError('Network error. Please try again.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      {message && (
-        <div className={`p-3 rounded-md ${
-          message.includes('Failed') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-        }`}>
-          {message}
+    <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-black">
+      <div className="w-full max-w-md">
+        <div className="p-8 bg-white border border-gray-100 shadow-xl rounded-2xl dark:bg-gray-900 dark:border-gray-700">
+          <div className="mb-8 text-center">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl">
+              <Mail className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reset Your Password</h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Enter your email to receive a password reset link
+            </p>
+          </div>
+
+          {/* Alerts */}
+          {error && (
+            <Alert variant="error" className="mb-6">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {success && (
+            <Alert variant="success" className="mb-6">
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full py-3 pl-10 pr-4 transition-colors border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  placeholder="Enter your email"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full px-4 py-3 font-medium text-white transition-all rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Sending...' : 'Send Reset Link'}
+            </button>
+
+            <div className="mt-4 text-center">
+              <p className="text-gray-600 dark:text-gray-400">
+                Remember your password?{' '}
+                <Link href="/login" className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </form>
         </div>
-      )}
-      
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <Label htmlFor="email" className="text-dark">Email Address</Label>
-          <Input 
-            id="email"
-            type="email"
-            {...register('email', { 
-              required: 'Email is required',
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: 'Invalid email address'
-              }
-            })}
-            className="border-secondary mt-1"
-          />
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
-        </div>
-        
-        <Button 
-          type="submit" 
-          className="w-full btn-primary py-2"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Sending...' : 'Send Reset Link'}
-        </Button>
-      </form>
-      
-      <div className="text-center mt-4">
-        <a 
-          href="/login" 
-          className="text-secondary hover:text-accent underline"
-        >
-          Return to Login
-        </a>
       </div>
     </div>
   );
-}
+};
+
+export default ForgotPasswordForm;

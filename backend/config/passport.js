@@ -10,44 +10,45 @@ const configurePassport = () => {
     callbackURL: `${process.env.BACKEND_URL}/api/auth/google/callback`,
     passReqToCallback: true
   },
-  async (req, accessToken, refreshToken, profile, done) => {
-    try {
-      console.log('Google profile received:', profile);
-      
-      // Find user by Google ID or email
-      let user = await User.findOne({
-        $or: [
-          { googleId: profile.id },
-          { email: profile.emails[0].value }
-        ]
-      });
+    async (req, accessToken, refreshToken, profile, done) => {
+      console.log('Received refresh token?', !!refreshToken);
+      try {
+        console.log('Google profile received:', profile);
 
-      if (!user) {
-        // Create new user
-        user = await User.create({
-          name: profile.displayName,
-          email: profile.emails[0].value,
-          googleId: profile.id,
-          provider: 'google',
-          isVerified: true,
-          image: profile.photos?.[0]?.value.replace('=s96-c', '=s400-c')
+        // Find user by Google ID or email
+        let user = await User.findOne({
+          $or: [
+            { googleId: profile.id },
+            { email: profile.emails[0].value }
+          ]
         });
-        console.log('New Google user created:', user.email);
-      } else {
-        // Update existing user
-        if (!user.googleId) user.googleId = profile.id;
-        if (!user.image) user.image = profile.photos?.[0]?.value;
-        user.isVerified = true;
-        await user.save();
-        console.log('Existing user updated with Google:', user.email);
-      }
 
-      return done(null, user);
-    } catch (error) {
-      console.error('Google authentication error:', error);
-      return done(error, null);
-    }
-  }));
+        if (!user) {
+          // Create new user
+          user = await User.create({
+            name: profile.displayName,
+            email: profile.emails[0].value,
+            googleId: profile.id,
+            provider: 'google',
+            isVerified: true,
+            image: profile.photos?.[0]?.value.replace('=s96-c', '=s400-c')
+          });
+          console.log('New Google user created:', user.email);
+        } else {
+          // Update existing user
+          if (!user.googleId) user.googleId = profile.id;
+          if (!user.image) user.image = profile.photos?.[0]?.value;
+          user.isVerified = true;
+          await user.save();
+          console.log('Existing user updated with Google:', user.email);
+        }
+
+        return done(null, user);
+      } catch (error) {
+        console.error('Google authentication error:', error);
+        return done(error, null);
+      }
+    }));
 
   passport.serializeUser((user, done) => {
     done(null, user.id);

@@ -81,7 +81,15 @@ const LoginForm = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/google';
+    // Clear existing Google session
+    // window.open('https://accounts.google.com/logout', '_blank');
+
+    // Add random state parameter
+    const state = Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('oauth_state', state);
+    
+    // Redirect to Google auth with fresh prompt
+    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google?prompt=select_account`;
   };
 
   return (

@@ -22,7 +22,7 @@ export default function LoginPage() {
   };
   return (
     <>
-          <Navbar darkMode={darkMode} toggleTheme={toggleTheme} />
+      <Navbar darkMode={darkMode} toggleTheme={toggleTheme} />
 
       <LoginForm />
       <Footer darkMode={darkMode} />
