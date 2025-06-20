@@ -1,0 +1,21 @@
+/* styles/fonts.css */
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/fonts/Montserrat.woff2') format('woff2');
+  font-weight: 600 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  /* src: url('/fonts/OpenSans.woff2') format('woff2'); */
+  font-weight: 400 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Oswald';
+  src: url('/fonts/Oswald.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+}

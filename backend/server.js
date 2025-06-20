@@ -9,7 +9,22 @@ import passport from 'passport';
 import configurePassport from './config/passport.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+
+// Create __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+
 dotenv.config();
+// Verify Google credentials are loaded
+// console.log('Google Client ID:', process.env.GOOGLE_CLIENT_ID);
+// console.log('Google Client Secret:', process.env.GOOGLE_CLIENT_SECRET ? '***hidden***' : 'missing');
+// console.log('Backend URL:', process.env.BACKEND_URL);
 const app = express();
 
 // Middleware
@@ -23,6 +38,13 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+
 // Passport configuration
 configurePassport();
 app.use(passport.initialize());
@@ -33,6 +55,8 @@ connectDB();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/', urlRoutes);
+// Add this after middleware setup
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Error handling middleware
 app.use(notFound);

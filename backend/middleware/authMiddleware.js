@@ -2,11 +2,23 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 // Protect routes
-export const protect = async (req, res, next) => {
-  const token = req.cookies.token;
+const protect = async (req, res, next) => {
+  let token;
   
+  // 1. Check Authorization header
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  // 2. Check cookies
+  else if (req.cookies.token) {
+    token = req.cookies.token;
+  }
+
   if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
+    return res.status(401).json({
+      success: false,
+      message: 'Not authorized, no token'
+    });
   }
 
   try {
@@ -14,7 +26,11 @@ export const protect = async (req, res, next) => {
     req.user = await User.findById(decoded.id).select('-password');
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Not authorized, token failed' });
+    console.error(error);
+    res.status(401).json({
+      success: false,
+      message: 'Not authorized, token failed'
+    });
   }
 };
 
@@ -26,3 +42,5 @@ export const admin = (req, res, next) => {
     res.status(403).json({ message: 'Not authorized as admin' });
   }
 };
+
+export default protect;

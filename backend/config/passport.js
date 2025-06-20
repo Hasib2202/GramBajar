@@ -31,7 +31,7 @@ const configurePassport = () => {
             googleId: profile.id,
             provider: 'google',
             isVerified: true,
-            image: profile.photos?.[0]?.value.replace('=s96-c', '=s400-c')
+            image: await uploadProfileImageFromURL(profile.photos[0].value, profile.id) // Add this line
           });
           console.log('New Google user created:', user.email);
         } else {

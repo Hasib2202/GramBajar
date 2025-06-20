@@ -1,5 +1,7 @@
 // components/Navbar.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import UserDropdown from './UserDropdown';
+
 
 // Simple icon components
 const FiLeaf = () => <span>🌱</span>;
@@ -12,6 +14,21 @@ const FiUser = () => <span>👤</span>;
 
 export default function Navbar({ darkMode, toggleTheme }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check if user is logged in
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+    setLoading(false);
+  }, []);
 
   return (
     <nav className={`sticky top-0 z-50 py-4 px-6 shadow-lg transition-all duration-500 ${
@@ -20,8 +37,8 @@ export default function Navbar({ darkMode, toggleTheme }) {
       <div className="flex items-center justify-between mx-auto max-w-7xl">
         {/* Logo */}
         <div className="flex items-center">
-          <div className="mr-2 text-3xl text-green-500"><FiLeaf /></div>
-          <h1 className={`text-2xl font-bold ${darkMode ? 'text-green-400' : 'text-green-700'}`}>
+          <div className="mr-0 text-3xl text-green-500"><FiLeaf /></div>
+          <h1 className={`text-2xl font-bold mr-2   ${darkMode ? 'text-green-400' : 'text-green-700'}`}>
             GramBajar
           </h1>
         </div>
@@ -69,12 +86,18 @@ export default function Navbar({ darkMode, toggleTheme }) {
           </button>
 
           {/* User Account */}
-          <a href="/login" className={`hidden md:flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 ${
-            darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
-          }`}>
-            <FiUser />
-            <span>Sign In</span>
-          </a>
+          {!loading && (
+            user ? (
+              <UserDropdown user={user} darkMode={darkMode} />
+            ) : (
+              <a href="/login" className={`hidden md:flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 ${
+                darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
+              }`}>
+                <FiUser />
+                <span>Sign In</span>
+              </a>
+            )
+          )}
 
           {/* Mobile Menu Toggle */}
           <button
@@ -110,12 +133,14 @@ export default function Navbar({ darkMode, toggleTheme }) {
               darkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>FAQs</a>
             
-            <a a href="/login" className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all w-fit ${
-              darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
-            }`}>
-              <FiUser />
-              <span>Sign In</span>
-            </a>
+            {!user && (
+              <a href="/login" className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all w-fit ${
+                darkMode ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
+              }`}>
+                <FiUser />
+                <span>Sign In</span>
+              </a>
+            )}
           </div>
         </div>
       )}

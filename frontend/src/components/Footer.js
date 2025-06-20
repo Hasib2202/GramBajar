@@ -27,10 +27,18 @@ export default function Footer({ darkMode }) {
         {/* Newsletter Section */}
         <div className={`rounded-2xl p-8 mb-12 ${darkMode ? 'bg-gray-800' : 'bg-green-800'}`}>
           <div className="mb-6 text-center">
-            <h3 className="mb-2 text-2xl font-bold text-white">Subscribe to Our Newsletter</h3>
-            <p className="text-green-200">Stay updated with our latest offers, new products, and healthy recipe ideas.</p>
+            <h3 className="mb-2 text-2xl font-bold text-white">
+              Subscribe to Our Newsletter
+            </h3>
+            <p className="text-green-200">
+              Stay updated with our latest offers, new products, and healthy recipe ideas.
+            </p>
           </div>
-          <form onSubmit={handleSubscribe} className="flex max-w-md gap-4 mx-auto">
+
+          <form
+            onSubmit={handleSubscribe}
+            className="flex flex-col w-full max-w-md gap-4 mx-auto sm:flex-row"
+          >
             <input
               type="email"
               value={email}
@@ -39,14 +47,16 @@ export default function Footer({ darkMode }) {
               className="flex-1 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
               required
             />
+
             <button
               type="submit"
-              className="px-6 py-3 font-medium text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600"
+              className="w-full px-6 py-3 font-medium text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600 sm:w-auto"
             >
               Subscribe
             </button>
           </form>
         </div>
+
 
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 gap-8 mb-12 md:grid-cols-2 lg:grid-cols-4">
@@ -127,7 +137,7 @@ export default function Footer({ darkMode }) {
             <div className="mb-4 text-center text-green-300 md:text-left md:mb-0">
               © {new Date().getFullYear()} GramBajar. All rights reserved.
             </div>
-            
+
             {/* Social Links */}
             <div className="flex space-x-4">
               <a href="#" className="text-xl text-green-300 transition-colors hover:text-white">

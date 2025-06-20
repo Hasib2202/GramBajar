@@ -32,7 +32,7 @@ const LoginForm = () => {
 
     if (verification === 'success') {
       setSuccess('Email verified successfully! You can now login.');
-       window.history.replaceState({}, document.title, window.location.pathname);
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
     if (loginSuccess === 'success') {
       setSuccess('Login successful!');
@@ -67,7 +67,16 @@ const LoginForm = () => {
 
       if (response.ok) {
         setSuccess('Login successful!');
-        localStorage.setItem('user', JSON.stringify(data));
+
+        // Store user data properly
+        localStorage.setItem('user', JSON.stringify({
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          profilePicture: data.user.profilePicture,
+          token: data.token
+        }));
+
         setTimeout(() => {
           window.location.href = '/';
         }, 1000);
@@ -88,7 +97,7 @@ const LoginForm = () => {
     // Add random state parameter
     const state = Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem('oauth_state', state);
-    
+
     // Redirect to Google auth with fresh prompt
     window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google?prompt=select_account`;
   };
