@@ -198,6 +198,27 @@ const AdminDashboard = () => {
           />
         </div>
       </div>
+
+       {/* User Bar Chart */}
+      <div className="mb-8">
+        <h2 className="mb-4 text-xl font-semibold">User Trends</h2>
+        <div className={`p-6 rounded-xl border shadow-sm ${darkMode?'bg-gray-800 border-gray-700':'bg-white border-gray-200'}`}>
+          {userData.length>0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={userData} margin={{ top:20, right:30, left:20, bottom:5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={darkMode?'#374151':'#e5e7eb'} />
+                <XAxis dataKey="name" stroke={darkMode?'#d1d5db':'#6b7280'} />
+                <YAxis stroke={darkMode?'#d1d5db':'#6b7280'} />
+                <Tooltip contentStyle={darkMode?{backgroundColor:'#1f2937',borderColor:'#374151'}:{}} itemStyle={darkMode?{color:'#f9fafb'}:{}} />
+                <Legend />
+                <Bar dataKey="value" fill="#4f46e5" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-center text-gray-500">No user data to display</div>
+          )}
+        </div>
+      </div>
       
       {/* Products Section */}
       <div className="mb-8">

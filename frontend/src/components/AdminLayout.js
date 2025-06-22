@@ -168,8 +168,8 @@ const AdminLayout = ({ children }) => {
               
               <div className="flex items-center">
                 <div className="w-8 h-8 mr-2 overflow-hidden bg-gray-200 rounded-full">
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt="User" className="object-cover w-full h-full" />
+                  {user?.image ? (
+                    <img src={user.image} alt="User" className="object-cover w-full h-full" />
                   ) : (
                     <div className={`flex items-center justify-center w-full h-full ${
                       darkMode ? 'bg-gray-700' : 'bg-gray-300'
