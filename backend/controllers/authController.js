@@ -7,7 +7,10 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import cloudinary from 'cloudinary';
-// Add this import at the top
+import { env } from 'process';
+import e from 'express';
+import dotenv from "dotenv";
+dotenv.config();  
 
 // User registration
 export const registerUser = async (req, res) => {
@@ -63,45 +66,6 @@ export const registerUser = async (req, res) => {
     res.status(400).json({ message: 'User registration failed', error: error.message });
   }
 };
-
-// // User login
-// export const loginUser = async (req, res) => {
-//   const { email, password } = req.body;
-
-//   try {
-//     const user = await User.findOne({ email });
-//     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
-
-//     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-//       expiresIn: process.env.JWT_EXPIRES_IN
-//     });
-
-//     res.cookie('token', token, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === 'production',
-//       maxAge: 24 * 60 * 60 * 1000, // 1 day
-//       sameSite: 'lax',
-//     });
-
-//     res.json({
-//       success: true,
-//       message: 'Login successful',
-//       token, // Send token in response
-//       user: {
-//         id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         profilePicture: user.profilePicture,
-//         isVerified: user.isVerified
-//       }
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Server error', error: error.message });
-//   }
-// };
 
 // Reset Password
 export const resetPassword = async (req, res) => {
@@ -258,12 +222,11 @@ export const resendVerification = async (req, res) => {
 };
 
 
-// Configure Cloudinary
 cloudinary.v2.config({
-  cloud_name: 'dksekryws',
-  api_key: '924184812939654',
-  api_secret: 'NLU8zzcsKFcRQciWa2mChFlPyB8',
-  secure: true
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure:     true
 });
 
 // Helper function to upload image to Cloudinary
@@ -507,6 +470,7 @@ export const logout = (req, res) => {
 };
 
 // User login
+// User login
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -528,19 +492,77 @@ export const loginUser = async (req, res) => {
       sameSite: 'lax',
     });
 
+    // Determine redirect path based on role
+    const redirectPath = user.role === 'Admin' 
+      ? '/admin/dashboard' 
+      : '/';
+
     res.json({
       success: true,
       message: 'Login successful',
       token,
+      redirectPath, // Add this
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        profilePicture: user.profilePicture,
+        role: user.role,
+        image: user.image,
         isVerified: user.isVerified
       }
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+
+// Temporary admin registration endpoint (remove after initial setup)
+export const registerAdmin = async (req, res) => {
+  const { name, email, password } = req.body;
+  
+  // Input validation
+  if (!name || !email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'All fields are required: name, email, password'
+    });
+  }
+  
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email already registered'
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const adminUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: "Admin",
+      isVerified: true
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Admin user created',
+      user: {
+        id: adminUser._id,
+        name: adminUser.name,
+        email: adminUser.email,
+        role: adminUser.role
+      }
+    });
+  } catch (error) {
+    console.error('Admin creation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Admin creation failed',
+      error: error.message
+    });
   }
 };

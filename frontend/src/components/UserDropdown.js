@@ -1,18 +1,67 @@
-// components/UserDropdown.js - Enhanced version with better image handling
-import { useState, useRef, useEffect } from 'react';
+// components/UserDropdown.js
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { FiSettings, FiLogOut, FiUser } from 'react-icons/fi';
-import ImageWithFallback from './ImageWithFallback';
+import { useRouter } from 'next/router';
 
-const UserDropdown = ({ user, darkMode, onUserUpdate }) => {
+const UserDropdown = ({ darkMode }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [localUser, setLocalUser] = useState(user);
+  const [localUser, setLocalUser] = useState(null);
+  const [imageUrl, setImageUrl] = useState('');
+  const [loading, setLoading] = useState(true);
   const dropdownRef = useRef(null);
+  const router = useRouter();
 
-  // Update local user when prop changes
   useEffect(() => {
-    setLocalUser(user);
-  }, [user]);
+    const fetchUserProfile = async () => {
+      // 1️⃣ Immediate check for token in localStorage
+      const stored = localStorage.getItem("user");
+      if (!stored) {
+        router.replace("/login");
+        return;
+      }
+      
+      const { token } = JSON.parse(stored);
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      // 2️⃣ Fetch profile
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/profileDetails`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+        
+        if (!res.ok) {
+          throw new Error("Not authorized");
+        }
+        
+        const data = await res.json();
+        setLocalUser(data);
+        
+        // Add cache busting to image URL
+        if (data.image) {
+          setImageUrl(`${data.image}?${Date.now()}`);
+        }
+      } catch (err) {
+        console.error(err);
+        // 3️⃣ On any error (401, network), clear and redirect
+        localStorage.removeItem("user");
+        router.replace("/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [router]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -28,49 +77,31 @@ const UserDropdown = ({ user, darkMode, onUserUpdate }) => {
     };
   }, []);
 
-  // Handle image error - update local state and localStorage
+  // Handle image error
   const handleImageError = () => {
     if (localUser?.image) {
       const updatedUser = { ...localUser, image: '' };
       setLocalUser(updatedUser);
+      setImageUrl('');
       
       // Update localStorage
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      // Notify parent component if callback provided
-      if (onUserUpdate) {
-        onUserUpdate(updatedUser);
-      }
     }
   };
 
   const handleLogout = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`, {
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`, {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         }
       });
-
-      // Clear user data regardless of response status
-      localStorage.removeItem('user');
-      
-      if (response.ok) {
-        console.log('Logout successful');
-      } else {
-        console.warn('Logout request failed, but user data cleared locally');
-      }
-      
-      // Redirect to home page
-      window.location.href = '/';
-      
     } catch (error) {
       console.error('Logout failed:', error);
-      // Still clear local data and redirect on network error
+    } finally {
       localStorage.removeItem('user');
-      window.location.href = '/';
+      router.replace('/');
     }
   };
 
@@ -85,18 +116,19 @@ const UserDropdown = ({ user, darkMode, onUserUpdate }) => {
       .slice(0, 2);
   };
 
-  // Fallback component for profile image
-  const ProfileImageFallback = () => (
-    <div className={`w-full h-full flex items-center justify-center text-sm font-medium ${
-      darkMode ? 'bg-gray-700 text-green-400' : 'bg-green-100 text-green-600'
-    }`}>
-      {localUser?.name ? getUserInitials(localUser.name) : <FiUser size={20} />}
-    </div>
-  );
-
-  if (!localUser) {
-    return null;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center w-10 h-10 overflow-hidden transition-all duration-200 border-2 border-green-500 rounded-full">
+        <div className={`w-full h-full flex items-center justify-center ${
+          darkMode ? 'bg-gray-700' : 'bg-green-100'
+        }`}>
+          <div className="w-4 h-4 border-t-2 border-green-500 rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
   }
+
+  if (!localUser) return null;
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -105,13 +137,20 @@ const UserDropdown = ({ user, darkMode, onUserUpdate }) => {
         className="flex items-center justify-center w-10 h-10 overflow-hidden transition-all duration-200 border-2 border-green-500 rounded-full focus:outline-none focus:ring-2 focus:ring-green-400 hover:scale-105 hover:border-green-400"
         aria-label="User menu"
       >
-        <ImageWithFallback
-          src={localUser.image}
-          alt={localUser.name || 'User Profile'}
-          className="object-cover w-full h-full rounded-full"
-          fallback={<ProfileImageFallback />}
-          onError={handleImageError}
-        />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={localUser.name || 'User Profile'}
+            className="object-cover w-full h-full rounded-full"
+            onError={handleImageError}
+          />
+        ) : (
+          <div className={`w-full h-full flex items-center justify-center text-sm font-medium ${
+            darkMode ? 'bg-gray-700 text-green-400' : 'bg-green-100 text-green-600'
+          }`}>
+            {localUser.name ? getUserInitials(localUser.name) : <FiUser size={20} />}
+          </div>
+        )}
       </button>
 
       {isOpen && (
@@ -131,13 +170,20 @@ const UserDropdown = ({ user, darkMode, onUserUpdate }) => {
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0 w-10 h-10 overflow-hidden rounded-full">
-                  <ImageWithFallback
-                    src={localUser.image}
-                    alt={localUser.name || 'User Profile'}
-                    className="object-cover w-full h-full"
-                    fallback={<ProfileImageFallback />}
-                    onError={handleImageError}
-                  />
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={localUser.name || 'User Profile'}
+                      className="object-cover w-full h-full"
+                      onError={handleImageError}
+                    />
+                  ) : (
+                    <div className={`w-full h-full flex items-center justify-center text-sm font-medium ${
+                      darkMode ? 'bg-gray-700 text-green-400' : 'bg-green-100 text-green-600'
+                    }`}>
+                      {localUser.name ? getUserInitials(localUser.name) : <FiUser size={20} />}
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium truncate ${

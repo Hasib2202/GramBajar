@@ -22,56 +22,56 @@ const ProfilePage = () => {
     const router = useRouter();
 
     useEffect(() => {
-  // 1️⃣ Immediate check for token in localStorage
-  const stored = localStorage.getItem("user");
-  if (!stored) {
-    router.replace("/login");
-    return;
-  }
-  const { token } = JSON.parse(stored);
-  if (!token) {
-    router.replace("/login");
-    return;
-  }
-
-  // 2️⃣ Fetch profile
-  (async () => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/profileDetails`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+        // 1️⃣ Immediate check for token in localStorage
+        const stored = localStorage.getItem("user");
+        if (!stored) {
+            router.replace("/login");
+            return;
         }
-      );
-      if (!res.ok) {
-        throw new Error("Not authorized");
-      }
-      const data = await res.json();
-      setUser(data);
-      setFormData({
-        name: data.name,
-        email: data.email,
-        currentPassword: "",
-        password: "",
-        confirmPassword: ""
-      });
-      if (data.image) {
-        setImagePreview(data.image);
-      }
-    } catch (err) {
-      console.error(err);
-      // 3️⃣ On any error (401, network), clear and redirect
-      localStorage.removeItem("user");
-      router.replace("/login");
-    } finally {
-      setLoading(false);
-    }
-  })();
-}, [router]);
+        const { token } = JSON.parse(stored);
+        if (!token) {
+            router.replace("/login");
+            return;
+        }
+
+        // 2️⃣ Fetch profile
+        (async () => {
+            try {
+                const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/profileDetails`,
+                    {
+                        method: "GET",
+                        credentials: "include",
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                );
+                if (!res.ok) {
+                    throw new Error("Not authorized");
+                }
+                const data = await res.json();
+                setUser(data);
+                setFormData({
+                    name: data.name,
+                    email: data.email,
+                    currentPassword: "",
+                    password: "",
+                    confirmPassword: ""
+                });
+                if (data.image) {
+                    setImagePreview(data.image);
+                }
+            } catch (err) {
+                console.error(err);
+                // 3️⃣ On any error (401, network), clear and redirect
+                localStorage.removeItem("user");
+                router.replace("/login");
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, [router]);
 
 
     const handleChange = (e) => {

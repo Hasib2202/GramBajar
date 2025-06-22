@@ -15,6 +15,7 @@ import {
   logout
 } from '../controllers/authController.js';
 import protect from '../middleware/authMiddleware.js';
+import { registerAdmin } from '../controllers/authController.js';
 
 const router = express.Router();
 
@@ -27,12 +28,12 @@ router.post('/reset-password', resetPassword);
 router.get('/google', googleLogin);
 router.get('/google/callback', googleCallback);
 router.post('/logout', logout);
-
-// Add these routes
 router.get('/profileDetails', protect, getUserProfile);
 router.put('/password', protect, updatePassword);
-
 router.put('/profile', protect, updateUserProfile);
 router.post('/upload', protect, uploadProfileImage);
+
+
+router.post('/register-admin', registerAdmin);
 
 export default router;

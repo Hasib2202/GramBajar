@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -8,6 +9,8 @@ import urlRoutes from './routes/urlRoutes.js';
 import passport from 'passport';
 import configurePassport from './config/passport.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
+
+import adminRoutes from './routes/adminRoutes.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -57,6 +60,9 @@ app.use('/api/auth', authRoutes);
 app.use('/', urlRoutes);
 // Add this after middleware setup
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
+// Use admin routes
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use(notFound);

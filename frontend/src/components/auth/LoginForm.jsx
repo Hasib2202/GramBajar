@@ -69,16 +69,23 @@ const LoginForm = () => {
         setSuccess('Login successful!');
 
         // Store user data properly
-        localStorage.setItem('user', JSON.stringify({
+        const userData = {
           id: data.user.id,
           name: data.user.name,
           email: data.user.email,
+          role: data.user.role, // Make sure role is included
           profilePicture: data.user.profilePicture,
           token: data.token
-        }));
+        };
+        localStorage.setItem('user', JSON.stringify(userData));
 
+        // Redirect based on role
         setTimeout(() => {
-          window.location.href = '/';
+          if (data.user.role === 'Admin') {
+            window.location.href = '/admin/dashboard';
+          } else {
+            window.location.href = '/';
+          }
         }, 1000);
       } else {
         setError(data.message || 'Login failed');
