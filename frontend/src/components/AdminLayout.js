@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { toast } from 'react-hot-toast';
 import { 
   FiHome, FiUsers, FiShoppingBag, FiPieChart, 
   FiSettings, FiLogOut, FiMoon, FiSun,
@@ -24,14 +25,52 @@ const AdminLayout = ({ children }) => {
   ];
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('user') || 'null');
-    setUser(userData);
+    const verifyUser = async () => {
+      try {
+        const userData = JSON.parse(localStorage.getItem('user') || 'null');
+        
+        if (!userData?.token) {
+          toast.error('Please login to access admin panel');
+          router.push('/login');
+          return;
+        }
+        
+        // Verify token and role with backend
+        const verifyResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/verify-token`,
+          {
+            headers: {
+              Authorization: `Bearer ${userData.token}`
+            }
+          }
+        );
+        
+        if (!verifyResponse.ok) {
+          const errorData = await verifyResponse.json();
+          throw new Error(errorData.message || 'Authentication failed');
+        }
+        
+        const verifiedUser = await verifyResponse.json();
+        
+        // Check if user is admin
+        if (verifiedUser.role !== 'Admin') {
+          toast.error('You do not have admin privileges');
+          router.push('/');
+          return;
+        }
+        
+        setUser(verifiedUser);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Authentication error:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        toast.error(error.message || 'Session expired');
+        router.push('/login');
+      }
+    };
     
-    if (!userData?.token || userData?.role !== 'Admin') {
-      router.push('/login');
-    } else {
-      setIsLoading(false);
-    }
+    verifyUser();
   }, []);
 
   const handleLogout = () => {

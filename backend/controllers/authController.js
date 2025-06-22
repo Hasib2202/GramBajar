@@ -470,7 +470,6 @@ export const logout = (req, res) => {
 };
 
 // User login
-// User login
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -564,5 +563,36 @@ export const registerAdmin = async (req, res) => {
       message: 'Admin creation failed',
       error: error.message
     });
+  }
+};
+
+export const verifyToken = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Token verification error:', error);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired' });
+    }
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    
+    res.status(500).json({ message: 'Server error' });
   }
 };

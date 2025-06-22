@@ -9,7 +9,6 @@ import urlRoutes from './routes/urlRoutes.js';
 import passport from 'passport';
 import configurePassport from './config/passport.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
-
 import adminRoutes from './routes/adminRoutes.js';
 
 import path from 'path';

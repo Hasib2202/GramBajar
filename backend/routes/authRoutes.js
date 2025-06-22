@@ -12,7 +12,8 @@ import {
   updateUserProfile,
   updatePassword,
   uploadProfileImage,
-  logout
+  logout,
+  verifyToken
 } from '../controllers/authController.js';
 import protect from '../middleware/authMiddleware.js';
 import { registerAdmin } from '../controllers/authController.js';
@@ -33,7 +34,7 @@ router.put('/password', protect, updatePassword);
 router.put('/profile', protect, updateUserProfile);
 router.post('/upload', protect, uploadProfileImage);
 
-
+router.get('/verify-token', verifyToken); // Add this route
 router.post('/register-admin', registerAdmin);
 
 export default router;

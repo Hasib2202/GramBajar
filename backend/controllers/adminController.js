@@ -12,11 +12,14 @@ export const getDashboardStats = async (req, res) => {
       createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
     });
     
-    // Get product statistics (to be implemented later)
+    // Get product statistics
     const totalProducts = await Product.countDocuments();
     const outOfStockProducts = await Product.countDocuments({ stock: 0 });
+    const lowStockProducts = await Product.countDocuments({ 
+      stock: { $gt: 0, $lte: 10 } 
+    });
     
-    // Get order statistics (to be implemented later)
+    // Get order statistics
     const totalOrders = await Order.countDocuments();
     const pendingOrders = await Order.countDocuments({ status: 'Pending' });
     
@@ -31,7 +34,8 @@ export const getDashboardStats = async (req, res) => {
         },
         products: {
           total: totalProducts,
-          outOfStock: outOfStockProducts
+          outOfStock: outOfStockProducts,
+          lowStock: lowStockProducts
         },
         orders: {
           total: totalOrders,
@@ -47,7 +51,6 @@ export const getDashboardStats = async (req, res) => {
     });
   }
 };
-
 // Get all users
 export const getAllUsers = async (req, res) => {
   try {
