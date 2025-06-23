@@ -5,7 +5,9 @@ import { toast } from 'react-hot-toast';
 import { 
   FiHome, FiUsers, FiShoppingBag, FiPieChart, 
   FiSettings, FiLogOut, FiMoon, FiSun,
-  FiMenu, FiX
+  FiMenu, FiX,
+  FiPackage,
+  FiBarChart
 } from 'react-icons/fi';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -21,6 +23,8 @@ const AdminLayout = ({ children }) => {
     { name: 'Users', path: '/admin/users', icon: FiUsers },
     { name: 'Products', path: '/admin/products', icon: FiShoppingBag },
     { name: 'Orders', path: '/admin/orders', icon: FiPieChart },
+    { name: 'Inventory', path: '/admin/inventory', icon: FiPackage },
+    { name: 'Reports', path: '/admin/reports', icon: FiBarChart },
     { name: 'Settings', path: '/admin/settings', icon: FiSettings },
   ];
 

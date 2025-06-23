@@ -1,14 +1,9 @@
-import AdminLayout from '@/components/AdminLayout';
+import AdminProducts from '@/components/AdminProducts';
 
-const Product = () => {
+const ProductsPage = () => {
   return (
-    <AdminLayout>
-      <div className="p-6">
-        <h1 className="mb-6 text-2xl font-bold">Product Management</h1>
-        <p>Product management content will go here</p>
-      </div>
-    </AdminLayout>
+      <AdminProducts />
   );
 };
 
-export default Product;
+export default ProductsPage;
