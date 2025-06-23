@@ -99,7 +99,7 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
       if (product) {
         // Update existing product
         response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/products/${product._id}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products/${product._id}`,
           {
             method: 'PUT',
             headers: {
@@ -111,7 +111,7 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
       } else {
         // Create new product
         response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/products`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products`,
           {
             method: 'POST',
             headers: {

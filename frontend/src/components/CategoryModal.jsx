@@ -43,29 +43,28 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
         formPayload.append('image', newImage);
       }
 
-      let response;
+      let url, method;
       if (category) {
-        response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/products/categories/${category._id}`,
-          {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${token}`
-            },
-            body: formPayload
-          }
-        );
+        url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products/categories/${category._id}`;
+        method = 'PUT';
       } else {
-        response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/products/categories`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`
-            },
-            body: formPayload
-          }
-        );
+        url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products/categories`;
+        method = 'POST';
+      }
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formPayload
+      });
+
+      // Handle non-JSON responses
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Invalid response: ${text.slice(0, 100)}`);
       }
 
       if (!response.ok) {
@@ -82,7 +81,7 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
       toast.success(`Category ${category ? 'updated' : 'created'} successfully`);
       onClose();
     } catch (error) {
-      console.error('Error saving category:', error);
+      console.error('Save category error:', error);
       toast.error(error.message || 'An error occurred');
     } finally {
       setIsSubmitting(false);
@@ -101,7 +100,7 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/products/categories/${category._id}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products/categories/${category._id}`,
         {
           method: 'DELETE',
           headers: {
@@ -119,7 +118,7 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
       toast.success('Category deleted successfully');
       onClose();
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error('Delete category error:', error);
       toast.error(error.message || 'An error occurred');
     } finally {
       setIsSubmitting(false);
@@ -257,6 +256,7 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
                 <button
                   onClick={handleDelete}
                   className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
+                  disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Deleting...' : 'Delete Permanently'}
                 </button>

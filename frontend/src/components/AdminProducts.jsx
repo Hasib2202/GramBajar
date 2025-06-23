@@ -37,14 +37,22 @@ const AdminProducts = () => {
       }
 
       let url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products?page=${page}&limit=${limit}`;
-      if (search) url += `&search=${search}`;
-      if (category) url += `&category=${category}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+      if (category) url += `&category=${encodeURIComponent(category)}`;
 
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
+
+      // Handle non-JSON responses
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.slice(0, 200));
+        throw new Error(`Invalid response: ${text.slice(0, 100)}`);
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -56,7 +64,7 @@ const AdminProducts = () => {
       setTotalPages(data.pages);
       setTotalProducts(data.total);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Fetch products error:', error);
       toast.error(error.message || 'Failed to load products');
     } finally {
       setLoading(false);
@@ -70,14 +78,21 @@ const AdminProducts = () => {
       
       if (!token) return;
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products/categories`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products/categories`;
+      
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      );
+      });
+
+      // Handle non-JSON responses
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.slice(0, 200));
+        throw new Error(`Invalid response: ${text.slice(0, 100)}`);
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -87,7 +102,7 @@ const AdminProducts = () => {
       const data = await response.json();
       setCategories(data.categories);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Fetch categories error:', error);
       toast.error(error.message || 'Failed to load categories');
     }
   };
@@ -99,6 +114,7 @@ const AdminProducts = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setCurrentPage(1);
     fetchProducts(1, searchQuery, selectedCategory);
   };
 
@@ -196,7 +212,7 @@ const AdminProducts = () => {
 
       handleProductDeleted(productId);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Delete product error:', error);
       toast.error(
         <div>
           <p className="font-semibold">Delete Failed</p>
@@ -207,7 +223,78 @@ const AdminProducts = () => {
   };
 
   const renderPagination = () => {
-    // ... similar to previous pagination implementation ...
+    if (totalPages <= 1) return null;
+    
+    const pages = [];
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    
+    if (endPage - startPage + 1 < maxVisible) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-3 py-1 rounded ${
+            currentPage === i
+              ? darkMode 
+                ? 'bg-indigo-700 text-white' 
+                : 'bg-indigo-600 text-white'
+              : darkMode 
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+    
+    return (
+      <div className={`flex items-center justify-between mt-6 p-4 rounded-lg ${
+        darkMode ? 'bg-gray-800' : 'bg-gray-50'
+      }`}>
+        <div className="text-sm">
+          Showing {(currentPage - 1) * limit + 1} to {Math.min(currentPage * limit, totalProducts)} 
+          of {totalProducts} products
+        </div>
+        <div className="flex space-x-1">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded ${
+              currentPage === 1
+                ? 'opacity-50 cursor-not-allowed'
+                : darkMode 
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Previous
+          </button>
+          
+          {pages}
+          
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded ${
+              currentPage === totalPages
+                ? 'opacity-50 cursor-not-allowed'
+                : darkMode 
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -284,6 +371,8 @@ const AdminProducts = () => {
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedCategory('');
+                  setCurrentPage(1);
+                  fetchProducts(1, '', '');
                 }}
                 className={`px-3 py-2 rounded-lg flex items-center ${
                   darkMode 
