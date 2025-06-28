@@ -1,31 +1,50 @@
-import { useState, useEffect } from 'react';
-import { FiX, FiUpload, FiTrash2 } from 'react-icons/fi';
+import { useState } from 'react';
+import { FiX, FiUpload, FiTrash2, FiLoader } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
-const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated, onCategoryDeleted, darkMode }) => {
+const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated, onCategoryDeleted, darkMode }) => {
   const [name, setName] = useState(category?.name || '');
   const [image, setImage] = useState(category?.image || '');
   const [newImage, setNewImage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    if (category) {
-      setName(category.name);
-      setImage(category.image || '');
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!name.trim()) {
+      newErrors.name = 'Category name is required';
     }
-  }, [category]);
+    
+    if (!image) {
+      newErrors.image = 'Category image is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setNewImage(file);
       setImage(URL.createObjectURL(file));
+      
+      // Clear image error when new image is selected
+      if (errors.image) {
+        setErrors(prev => ({ ...prev, image: '' }));
+      }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -37,10 +56,10 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
         return;
       }
 
-      const formPayload = new FormData();
-      formPayload.append('name', name);
+      const formData = new FormData();
+      formData.append('name', name);
       if (newImage) {
-        formPayload.append('image', newImage);
+        formData.append('image', newImage);
       }
 
       let url, method;
@@ -57,15 +76,8 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
         headers: {
           Authorization: `Bearer ${token}`
         },
-        body: formPayload
+        body: formData
       });
-
-      // Handle non-JSON responses
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        throw new Error(`Invalid response: ${text.slice(0, 100)}`);
-      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -75,14 +87,22 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
       const data = await response.json();
       if (category) {
         onCategoryUpdated(data.category);
+        toast.success('Category updated successfully');
       } else {
         onCategoryCreated(data.category);
+        toast.success('Category created successfully');
       }
-      toast.success(`Category ${category ? 'updated' : 'created'} successfully`);
+      
+      // Close form after successful operation
       onClose();
     } catch (error) {
       console.error('Save category error:', error);
-      toast.error(error.message || 'An error occurred');
+      toast.error(
+        <div>
+          <p className="font-semibold">Action Failed</p>
+          <p className="text-sm">{error.message || 'An error occurred'}</p>
+        </div>
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -119,7 +139,12 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
       onClose();
     } catch (error) {
       console.error('Delete category error:', error);
-      toast.error(error.message || 'An error occurred');
+      toast.error(
+        <div>
+          <p className="font-semibold">Action Failed</p>
+          <p className="text-sm">{error.message || 'An error occurred'}</p>
+        </div>
+      );
     } finally {
       setIsSubmitting(false);
       setShowDeleteConfirm(false);
@@ -127,44 +152,50 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${darkMode ? 'bg-black bg-opacity-70' : 'bg-black bg-opacity-50'}`}>
-      <div className={`w-full max-w-md rounded-lg shadow-xl overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-        <div className={`flex justify-between items-center p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <h2 className="text-xl font-bold">
-            {category ? 'Edit Category' : 'Add New Category'}
-          </h2>
-          <button 
-            onClick={onClose}
-            className={`p-2 rounded-full ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-            disabled={isSubmitting}
-          >
-            <FiX size={24} />
-          </button>
-        </div>
+    <div>
+      <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+        <h3 className="mb-6 text-lg font-bold">
+          {category ? 'Edit Category' : 'Create New Category'}
+        </h3>
         
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="mb-6">
-            <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Name *</label>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              Name *
+            </label>
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
+              onChange={(e) => {
+                setName(e.target.value);
+                // Clear error when typing
+                if (errors.name) {
+                  setErrors(prev => ({ ...prev, name: '' }));
+                }
+              }}
               className={`w-full px-4 py-2 rounded-lg ${
-                darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
-              } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200'
+              } border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                errors.name ? 'border-red-500' : ''
+              }`}
               disabled={isSubmitting}
             />
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+            )}
           </div>
           
-          <div className="mb-6">
+          <div className="mb-4">
             <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Category Image
+              Category Image *
             </label>
+            
             <div className="flex items-center">
               <label className={`flex items-center justify-center px-4 py-2 rounded-lg cursor-pointer ${
-                darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-              } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                darkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
+              } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} ${
+                errors.image ? 'border border-red-500' : ''
+              }`}>
                 <FiUpload className="mr-2" />
                 {image ? 'Change Image' : 'Upload Image'}
                 <input
@@ -175,7 +206,26 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
                   disabled={isSubmitting}
                 />
               </label>
+              
+              {image && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImage('');
+                    setNewImage(null);
+                    // Set error if image is removed
+                    setErrors(prev => ({ ...prev, image: 'Category image is required' }));
+                  }}
+                  className="p-2 ml-3 text-red-600 rounded-full hover:bg-red-100 dark:hover:bg-red-900"
+                >
+                  <FiTrash2 size={16} />
+                </button>
+              )}
             </div>
+            
+            {errors.image && (
+              <p className="mt-1 text-sm text-red-500">{errors.image}</p>
+            )}
             
             {image && (
               <div className="mt-4">
@@ -201,12 +251,13 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
                 </button>
               )}
             </div>
+            
             <div className="flex space-x-3">
               <button
                 type="button"
                 onClick={onClose}
                 className={`px-4 py-2 rounded-lg ${
-                  darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                  darkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
                 }`}
                 disabled={isSubmitting}
               >
@@ -223,10 +274,7 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
               >
                 {isSubmitting ? (
                   <span className="flex items-center">
-                    <svg className="w-4 h-4 mr-2 -ml-1 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <FiLoader className="mr-2 animate-spin" />
                     {category ? 'Updating...' : 'Creating...'}
                   </span>
                 ) : (
@@ -236,37 +284,42 @@ const CategoryModal = ({ category, onClose, onCategoryCreated, onCategoryUpdated
             </div>
           </div>
         </form>
-
-        {/* Delete Confirmation */}
-        {showDeleteConfirm && (
-          <div className={`absolute inset-0 flex items-center justify-center p-4 ${darkMode ? 'bg-gray-900 bg-opacity-90' : 'bg-white bg-opacity-95'}`}>
-            <div className="w-full max-w-md p-6 rounded-lg shadow-xl">
-              <h3 className="mb-4 text-xl font-bold text-red-600">Confirm Deletion</h3>
-              <p className="mb-6">
-                Are you sure you want to delete the category "{category.name}"? 
-                This will remove the category from all products and cannot be undone.
-              </p>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Deleting...' : 'Delete Permanently'}
-                </button>
-              </div>
+      </div>
+      
+      {/* Delete Confirmation */}
+      {showDeleteConfirm && (
+        <div className={`fixed inset-0 flex items-center justify-center p-4 z-10 ${darkMode ? 'bg-black bg-opacity-80' : 'bg-white bg-opacity-90'}`}>
+          <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <h3 className="mb-4 text-xl font-bold text-red-600">Confirm Deletion</h3>
+            <p className="mb-6">
+              Are you sure you want to delete the category "{category.name}"? 
+              This will remove the category from all products and cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <FiLoader className="mr-2 animate-spin" />
+                    Deleting...
+                  </span>
+                ) : 'Delete Permanently'}
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default CategoryModal;
+export default CategoryForm;

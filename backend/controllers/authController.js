@@ -12,6 +12,102 @@ import e from 'express';
 import dotenv from "dotenv";
 dotenv.config();  
 
+// User login
+export const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN
+    });
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+    });
+
+    // Determine redirect path based on role
+    const redirectPath = user.role === 'Admin' 
+      ? '/admin/dashboard' 
+      : '/';
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      redirectPath, // Add this
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        image: user.image,
+        isVerified: user.isVerified
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Temporary admin registration endpoint (remove after initial setup)
+export const registerAdmin = async (req, res) => {
+  const { name, email, password } = req.body;
+  
+  // Input validation
+  if (!name || !email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'All fields are required: name, email, password'
+    });
+  }
+  
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email already registered'
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const adminUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: "Admin",
+      isVerified: true
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Admin user created',
+      user: {
+        id: adminUser._id,
+        name: adminUser.name,
+        email: adminUser.email,
+        role: adminUser.role
+      }
+    });
+  } catch (error) {
+    console.error('Admin creation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Admin creation failed',
+      error: error.message
+    });
+  }
+};
+
 // User registration
 export const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
@@ -196,7 +292,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-// controllers/authController.js
+// resend verification email
 export const resendVerification = async (req, res) => {
   const { email } = req.body;
 
@@ -220,44 +316,6 @@ export const resendVerification = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
-
-cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key:    process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure:     true
-});
-
-// Helper function to upload image to Cloudinary
-export async function uploadToCloudinary(filePath, userId) {
-  try {
-    const result = await cloudinary.v2.uploader.upload(filePath, {
-      folder: 'grambajar/profile-pictures',
-      public_id: `user-${userId}`,
-      transformation: [{ width: 400, height: 400, crop: 'fill' }]
-    });
-    return result.secure_url;
-  } catch (error) {
-    console.error('Cloudinary upload error:', error);
-    return null;
-  }
-}
-
-// Helper function to upload from URL
-export async function uploadProfileImageFromURL(url, userId) {
-  try {
-    const result = await cloudinary.v2.uploader.upload(url, {
-      folder: 'grambajar/profile-pictures',
-      public_id: `google-${userId}`,
-      transformation: [{ width: 400, height: 400, crop: 'fill' }]
-    });
-    return result.secure_url;
-  } catch (error) {
-    console.error('Error uploading profile image from URL:', error);
-    return null;
-  }
-}
 
 // Google login
 export const googleLogin = (req, res, next) => {
@@ -311,6 +369,44 @@ export const googleCallback = (req, res, next) => {
   })(req, res, next);
 };
 
+
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure:     true
+});
+
+// Helper function to upload image to Cloudinary
+export async function uploadToCloudinary(filePath, userId) {
+  try {
+    const result = await cloudinary.v2.uploader.upload(filePath, {
+      folder: 'grambajar/profile-pictures',
+      public_id: `user-${userId}`,
+      transformation: [{ width: 400, height: 400, crop: 'fill' }]
+    });
+    return result.secure_url;
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    return null;
+  }
+}
+
+// Helper function to upload from URL
+export async function uploadProfileImageFromURL(url, userId) {
+  try {
+    const result = await cloudinary.v2.uploader.upload(url, {
+      folder: 'grambajar/profile-pictures',
+      public_id: `google-${userId}`,
+      transformation: [{ width: 400, height: 400, crop: 'fill' }]
+    });
+    return result.secure_url;
+  } catch (error) {
+    console.error('Error uploading profile image from URL:', error);
+    return null;
+  }
+}
+
 // Configure multer for temporary file storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -337,43 +433,101 @@ const upload = multer({
   }
 }).single('profileImage');
 
+// Upload or replace profile image
+export const uploadProfileImage = (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+    try {
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ message: 'User not found' });
+
+      // Upload new image
+      const result = await cloudinary.v2.uploader.upload(req.file.path, {
+        folder: 'grambajar/profile-pictures',
+        public_id: `user-${user._id}-${Date.now()}`,
+        transformation: [{ width: 400, height: 400, crop: 'fill' }],
+        overwrite: true,
+        invalidate: true
+      });
+
+      // Determine old public ID (stored or derived)
+      let oldPublicId;
+      if (user.imagePublicId) {
+        oldPublicId = user.imagePublicId;
+      } else if (user.image) {
+        const match = user.image.match(/grambajar\/profile-pictures\/([^\.]+)/);
+        oldPublicId = match ? `grambajar/profile-pictures/${match[1]}` : null;
+      }
+
+      // Delete old image if found
+      if (oldPublicId) {
+        await cloudinary.v2.uploader.destroy(oldPublicId, { invalidate: true });
+      }
+
+      // Save new URL and public ID
+      user.image = result.secure_url;
+      user.imagePublicId = result.public_id;
+      await user.save();
+
+      // Clean up local file
+      fs.unlinkSync(req.file.path);
+
+      res.json({ success: true, message: 'Profile image updated successfully', image: result.secure_url });
+    } catch (error) {
+      if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      console.error('Profile image upload error:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  });
+};
+
+// Update user profile (name, email, optional image URL)
+export const updateUserProfile = (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+
+    const { name, email, imageUrl } = req.body;
+
+    try {
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ message: 'User not found' });
+
+      user.name = name || user.name;
+      user.email = email || user.email;
+
+      // Handle external image URL (e.g., social login)
+      if (imageUrl) {
+        const urlResult = await uploadProfileImageFromURL(imageUrl, user._id);
+        if (urlResult) user.image = urlResult;
+      }
+
+      await user.save();
+
+      res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          profilePicture: user.image,
+          isVerified: user.isVerified
+        }
+      });
+    } catch (error) {
+      console.error('Update profile error:', error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  });
+};
+
 // Get user profile
 export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// Update user profile
-export const updateUserProfile = async (req, res) => {
-  const { name, email } = req.body;
-
-  try {
-    const user = await User.findById(req.user.id);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    user.name = name || user.name;
-    user.email = email || user.email;
-
-    await user.save();
-
-    res.json({
-      success: true,
-      message: 'Profile updated successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        profilePicture: user.profilePicture,
-        isVerified: user.isVerified
-      }
-    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -409,161 +563,10 @@ export const updatePassword = async (req, res) => {
   }
 };
 
-// Upload profile image
-export const uploadProfileImage = (req, res) => {
-  upload(req, res, async (err) => {
-    if (err) {
-      return res.status(400).json({ message: err.message });
-    }
-    
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-    
-    try {
-      const user = await User.findById(req.user.id);
-      
-      // Upload to Cloudinary
-      const cloudinaryUrl = await uploadToCloudinary(req.file.path, user._id);
-      
-      if (!cloudinaryUrl) {
-        throw new Error('Failed to upload image to Cloudinary');
-      }
-      
-      // Delete old profile picture from Cloudinary if exists
-      if (user.image) {
-        try {
-          const publicId = user.image.split('/').pop().split('.')[0];
-          await cloudinary.v2.uploader.destroy(`grambajar/profile-pictures/${publicId}`);
-        } catch (deleteError) {
-          console.error('Error deleting old image:', deleteError);
-        }
-      }
-      
-      // Save new profile picture URL
-      user.image = cloudinaryUrl;
-      await user.save();
-      
-      // Delete local file
-      fs.unlinkSync(req.file.path);
-      
-      res.json({ 
-        success: true, 
-        message: 'Profile image uploaded successfully',
-        image: cloudinaryUrl
-      });
-    } catch (error) {
-      // Clean up local file on error
-      if (req.file?.path && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-      
-      res.status(500).json({ message: 'Server error', error: error.message });
-    }
-  });
-};
-
 // Logout
 export const logout = (req, res) => {
   res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });
-};
-
-// User login
-export const loginUser = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN
-    });
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
-    });
-
-    // Determine redirect path based on role
-    const redirectPath = user.role === 'Admin' 
-      ? '/admin/dashboard' 
-      : '/';
-
-    res.json({
-      success: true,
-      message: 'Login successful',
-      token,
-      redirectPath, // Add this
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        image: user.image,
-        isVerified: user.isVerified
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-
-// Temporary admin registration endpoint (remove after initial setup)
-export const registerAdmin = async (req, res) => {
-  const { name, email, password } = req.body;
-  
-  // Input validation
-  if (!name || !email || !password) {
-    return res.status(400).json({
-      success: false,
-      message: 'All fields are required: name, email, password'
-    });
-  }
-  
-  try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'Email already registered'
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const adminUser = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role: "Admin",
-      isVerified: true
-    });
-    
-    res.status(201).json({
-      success: true,
-      message: 'Admin user created',
-      user: {
-        id: adminUser._id,
-        name: adminUser.name,
-        email: adminUser.email,
-        role: adminUser.role
-      }
-    });
-  } catch (error) {
-    console.error('Admin creation error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Admin creation failed',
-      error: error.message
-    });
-  }
 };
 
 export const verifyToken = async (req, res) => {

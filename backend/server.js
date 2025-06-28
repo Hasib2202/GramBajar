@@ -6,6 +6,8 @@ import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import urlRoutes from './routes/urlRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
 import passport from 'passport';
 import configurePassport from './config/passport.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
@@ -62,6 +64,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Use admin routes
 app.use('/api/admin', adminRoutes);
+
+app.use('/api/admin/products', productRoutes);
+app.use('/api/admin/orders', orderRoutes);
 
 // Error handling middleware
 app.use(notFound);

@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import { 
-  FiPlus, FiEdit, FiTrash2, FiSearch, 
-  FiFilter, FiX, FiBox, FiTag 
+import {
+  FiPlus, FiEdit, FiTrash2, FiSearch,
+  FiFilter, FiX, FiBox, FiTag
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/context/ThemeContext';
 import ProductModal from '@/components/ProductModal';
 import CategoryModal from '@/components/CategoryModal';
+import CategoryManager from './CategoryManager';
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -24,13 +25,15 @@ const AdminProducts = () => {
   const [currentCategory, setCurrentCategory] = useState(null);
   const [limit] = useState(10);
   const { darkMode } = useTheme();
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+
 
   const fetchProducts = async (page = 1, search = '', category = '') => {
     try {
       setLoading(true);
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const token = user?.token;
-      
+
       if (!token) {
         toast.error('Session expired, please login again');
         return;
@@ -75,11 +78,11 @@ const AdminProducts = () => {
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const token = user?.token;
-      
+
       if (!token) return;
 
       const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products/categories`;
-      
+
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -148,7 +151,7 @@ const AdminProducts = () => {
   };
 
   const handleProductUpdated = (updatedProduct) => {
-    setProducts(products.map(p => 
+    setProducts(products.map(p =>
       p._id === updatedProduct._id ? updatedProduct : p
     ));
     toast.success('Product updated successfully');
@@ -158,7 +161,7 @@ const AdminProducts = () => {
     setProducts(products.filter(p => p._id !== productId));
     setTotalProducts(totalProducts - 1);
     toast.success('Product deleted successfully');
-    
+
     if (products.length === 1 && currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
@@ -170,7 +173,7 @@ const AdminProducts = () => {
   };
 
   const handleCategoryUpdated = (updatedCategory) => {
-    setCategories(categories.map(c => 
+    setCategories(categories.map(c =>
       c._id === updatedCategory._id ? updatedCategory : c
     ));
     toast.success('Category updated successfully');
@@ -189,7 +192,7 @@ const AdminProducts = () => {
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const token = user?.token;
-      
+
       if (!token) {
         toast.error('Session expired, please login again');
         return;
@@ -224,71 +227,67 @@ const AdminProducts = () => {
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
-    
+
     const pages = [];
     const maxVisible = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
     let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-    
+
     if (endPage - startPage + 1 < maxVisible) {
       startPage = Math.max(1, endPage - maxVisible + 1);
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       pages.push(
         <button
           key={i}
           onClick={() => handlePageChange(i)}
-          className={`px-3 py-1 rounded ${
-            currentPage === i
-              ? darkMode 
-                ? 'bg-indigo-700 text-white' 
+          className={`px-3 py-1 rounded ${currentPage === i
+              ? darkMode
+                ? 'bg-indigo-700 text-white'
                 : 'bg-indigo-600 text-white'
-              : darkMode 
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+              : darkMode
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
+            }`}
         >
           {i}
         </button>
       );
     }
-    
+
     return (
-      <div className={`flex items-center justify-between mt-6 p-4 rounded-lg ${
-        darkMode ? 'bg-gray-800' : 'bg-gray-50'
-      }`}>
+      <div className={`flex items-center justify-between mt-6 p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'
+        }`}>
         <div className="text-sm">
-          Showing {(currentPage - 1) * limit + 1} to {Math.min(currentPage * limit, totalProducts)} 
+          Showing {(currentPage - 1) * limit + 1} to {Math.min(currentPage * limit, totalProducts)}
           of {totalProducts} products
         </div>
         <div className="flex space-x-1">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className={`px-3 py-1 rounded ${
-              currentPage === 1
+            className={`px-3 py-1 rounded ${currentPage === 1
                 ? 'opacity-50 cursor-not-allowed'
-                : darkMode 
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                : darkMode
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+              }`}
           >
             Previous
           </button>
-          
+
           {pages}
-          
+
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className={`px-3 py-1 rounded ${
-              currentPage === totalPages
+            className={`px-3 py-1 rounded ${currentPage === totalPages
                 ? 'opacity-50 cursor-not-allowed'
-                : darkMode 
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                : darkMode
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+              }`}
           >
             Next
           </button>
@@ -305,15 +304,15 @@ const AdminProducts = () => {
           <div className="flex mt-4 space-x-3 md:mt-0">
             <button
               onClick={() => handleOpenProductModal()}
-              className={`px-4 py-2 rounded-lg flex items-center ${
-                darkMode 
-                  ? 'bg-indigo-600 hover:bg-indigo-700' 
+              className={`px-4 py-2 rounded-lg flex items-center ${darkMode
+                  ? 'bg-indigo-600 hover:bg-indigo-700'
                   : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-              }`}
+                }`}
             >
               <FiPlus className="mr-2" /> Add Product
             </button>
-            <button
+
+            {/* <button
               onClick={() => handleOpenCategoryModal()}
               className={`px-4 py-2 rounded-lg flex items-center ${
                 darkMode 
@@ -322,13 +321,31 @@ const AdminProducts = () => {
               }`}
             >
               <FiTag className="mr-2" /> Categories
+            </button> */}
+
+            <button
+              onClick={() => setShowCategoryManager(true)}
+              className={`px-4 py-2 rounded-lg flex items-center ${darkMode
+                  ? 'bg-gray-700 hover:bg-gray-600'
+                  : 'bg-gray-200 hover:bg-gray-300'
+                }`}
+            >
+              <FiTag className="mr-2" /> Categories
             </button>
+
+            {showCategoryManager && (
+              <CategoryManager
+                darkMode={darkMode}
+                onClose={() => setShowCategoryManager(false)}
+              />
+            )}
+
+
           </div>
         </div>
 
-        <div className={`p-4 rounded-lg mb-6 ${
-          darkMode ? 'bg-gray-800' : 'bg-gray-50'
-        }`}>
+        <div className={`p-4 rounded-lg mb-6 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'
+          }`}>
           <form onSubmit={handleSearch} className="flex flex-col space-y-3 md:flex-row md:space-y-0 md:space-x-3">
             <div className="relative flex-1">
               <input
@@ -336,25 +353,23 @@ const AdminProducts = () => {
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full px-4 py-2 pl-10 rounded-lg ${
-                  darkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
+                className={`w-full px-4 py-2 pl-10 rounded-lg ${darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-200'
-                } border shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                  } border shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
               />
               <FiSearch className="absolute text-gray-400 left-3 top-3" size={18} />
             </div>
-            
+
             <div className="flex space-x-3">
               <div className="relative">
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className={`px-4 py-2 pr-8 rounded-lg appearance-none ${
-                    darkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`px-4 py-2 pr-8 rounded-lg appearance-none ${darkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-200'
-                  } border shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                    } border shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                 >
                   <option value="">All Categories</option>
                   {categories.map(category => (
@@ -365,7 +380,7 @@ const AdminProducts = () => {
                 </select>
                 <FiFilter className="absolute text-gray-400 pointer-events-none right-3 top-3" />
               </div>
-              
+
               <button
                 type="button"
                 onClick={() => {
@@ -374,11 +389,10 @@ const AdminProducts = () => {
                   setCurrentPage(1);
                   fetchProducts(1, '', '');
                 }}
-                className={`px-3 py-2 rounded-lg flex items-center ${
-                  darkMode 
-                    ? 'bg-gray-700 hover:bg-gray-600' 
+                className={`px-3 py-2 rounded-lg flex items-center ${darkMode
+                    ? 'bg-gray-700 hover:bg-gray-600'
                     : 'bg-gray-200 hover:bg-gray-300'
-                }`}
+                  }`}
               >
                 <FiX size={18} />
               </button>
@@ -392,9 +406,8 @@ const AdminProducts = () => {
           </div>
         ) : (
           <>
-            <div className={`overflow-hidden rounded-lg shadow ${
-              darkMode ? 'bg-gray-800' : 'bg-white'
-            }`}>
+            <div className={`overflow-hidden rounded-lg shadow ${darkMode ? 'bg-gray-800' : 'bg-white'
+              }`}>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
@@ -429,15 +442,14 @@ const AdminProducts = () => {
                           <td className="px-6 py-4">
                             <div className="flex items-center">
                               {product.images && product.images.length > 0 ? (
-                                <img 
-                                  src={product.images[0]} 
-                                  alt={product.title} 
+                                <img
+                                  src={product.images[0]}
+                                  alt={product.title}
                                   className="object-cover w-10 h-10 rounded"
                                 />
                               ) : (
-                                <div className={`w-10 h-10 rounded flex items-center justify-center ${
-                                  darkMode ? 'bg-gray-600' : 'bg-gray-200'
-                                }`}>
+                                <div className={`w-10 h-10 rounded flex items-center justify-center ${darkMode ? 'bg-gray-600' : 'bg-gray-200'
+                                  }`}>
                                   <FiBox className="text-gray-500" />
                                 </div>
                               )}
@@ -467,13 +479,12 @@ const AdminProducts = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className={`font-medium ${
-                              product.stock === 0 
-                                ? 'text-red-500' 
-                                : product.stock <= 10 
-                                  ? 'text-amber-500' 
+                            <div className={`font-medium ${product.stock === 0
+                                ? 'text-red-500'
+                                : product.stock <= 10
+                                  ? 'text-amber-500'
                                   : 'text-green-500'
-                            }`}>
+                              }`}>
                               {product.stock} in stock
                             </div>
                           </td>
@@ -509,7 +520,7 @@ const AdminProducts = () => {
 
         {/* Product Modal */}
         {showProductModal && (
-          <ProductModal 
+          <ProductModal
             product={currentProduct}
             categories={categories}
             onClose={handleCloseProductModal}
@@ -521,7 +532,7 @@ const AdminProducts = () => {
 
         {/* Category Modal */}
         {showCategoryModal && (
-          <CategoryModal 
+          <CategoryModal
             category={currentCategory}
             onClose={handleCloseCategoryModal}
             onCategoryCreated={handleCategoryCreated}

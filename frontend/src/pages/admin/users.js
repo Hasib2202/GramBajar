@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import { FiSearch, FiUserX, FiUserCheck, FiTrash2, FiEdit, FiLoader } from 'react-icons/fi';
+import { FiSearch, FiUserX, FiUserCheck, FiTrash2, FiEdit, FiLoader, FiAlertTriangle } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -20,7 +20,7 @@ const AdminUsers = () => {
       setLoading(true);
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const token = user?.token;
-      
+
       if (!token) {
         toast.error('Session expired, please login again');
         return;
@@ -68,10 +68,10 @@ const AdminUsers = () => {
   const toggleUserStatus = async (userId, currentStatus, userName) => {
     try {
       setActionLoading(prev => ({ ...prev, [userId]: 'status' }));
-      
+
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const token = user?.token;
-      
+
       if (!token) {
         toast.error('Session expired, please login again');
         return;
@@ -89,20 +89,37 @@ const AdminUsers = () => {
         }
       );
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update user status');
+        const message = result?.message || result?.error || 'Failed to update user status';
+
+        // ✅ Show error toast directly instead of throwing
+        toast.error(
+          <div className="flex items-start">
+            <div className="mr-3 mt-0.5">
+              <div className="flex items-center justify-center w-6 h-6 bg-yellow-100 rounded-full">
+                <FiAlertTriangle className="text-yellow-600" />
+              </div>
+            </div>
+            <div>
+              <p className="font-semibold">Action Failed</p>
+              <p className="text-sm">{message}</p>
+            </div>
+          </div>
+        );
+
+        return; // ✅ exit early
       }
 
-      const data = await response.json();
-      
       toast.success(
         <div className="flex items-start">
           <div className="mr-3 mt-0.5">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-              !currentStatus ? 'bg-red-100' : 'bg-green-100'
-            }`}>
-              {!currentStatus ? <FiUserX className="text-red-500" /> : <FiUserCheck className="text-green-500" />}
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${!currentStatus ? 'bg-red-100' : 'bg-green-100'
+              }`}>
+              {!currentStatus
+                ? <FiUserX className="text-red-500" />
+                : <FiUserCheck className="text-green-500" />}
             </div>
           </div>
           <div>
@@ -112,17 +129,24 @@ const AdminUsers = () => {
         </div>,
         { duration: 3000 }
       );
-      
-      // Update the user in the list
-      setUsers(users.map(user => 
+
+      setUsers(users.map(user =>
         user._id === userId ? { ...user, isBlocked: !currentStatus } : user
       ));
     } catch (error) {
       console.error('Error:', error);
+
       toast.error(
-        <div>
-          <p className="font-semibold">Action Failed</p>
-          <p className="text-sm">{error.message || 'Failed to update user status'}</p>
+        <div className="flex items-start">
+          <div className="mr-3 mt-0.5">
+            <div className="flex items-center justify-center w-6 h-6 bg-yellow-100 rounded-full">
+              <FiAlertTriangle className="text-yellow-600" />
+            </div>
+          </div>
+          <div>
+            <p className="font-semibold">Action Failed</p>
+            <p className="text-sm">{error.message || 'Something went wrong'}</p>
+          </div>
         </div>
       );
     } finally {
@@ -141,10 +165,10 @@ const AdminUsers = () => {
 
     try {
       setActionLoading(prev => ({ ...prev, [userId]: 'delete' }));
-      
+
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const token = user?.token;
-      
+
       if (!token) {
         toast.error('Session expired, please login again');
         return;
@@ -160,13 +184,26 @@ const AdminUsers = () => {
         }
       );
 
+      // Handle 400 errors specifically
+      if (response.status === 400) {
+        const errorData = await response.json();
+        // Show error in toast without throwing
+        toast.error(
+          <div>
+            <p className="font-semibold">Delete Failed</p>
+            <p className="text-sm">{errorData.message || 'Failed to delete user'}</p>
+          </div>
+        );
+        return;
+      }
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to delete user');
       }
 
       const data = await response.json();
-      
+
       toast.success(
         <div className="flex items-start">
           <div className="mr-3 mt-0.5">
@@ -181,11 +218,11 @@ const AdminUsers = () => {
         </div>,
         { duration: 3000 }
       );
-      
+
       // Remove the user from the list
       setUsers(users.filter(user => user._id !== userId));
       setTotalUsers(totalUsers - 1);
-      
+
       // If last user on page, go to previous page
       if (users.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
@@ -218,7 +255,7 @@ const AdminUsers = () => {
     } else {
       const maxPagesBeforeCurrent = Math.floor(maxPagesToShow / 2);
       const maxPagesAfterCurrent = Math.ceil(maxPagesToShow / 2) - 1;
-      
+
       if (currentPage <= maxPagesBeforeCurrent) {
         startPage = 1;
         endPage = maxPagesToShow;
@@ -236,13 +273,12 @@ const AdminUsers = () => {
         <button
           key={i}
           onClick={() => handlePageChange(i)}
-          className={`px-3 py-1 rounded ${
-            currentPage === i
+          className={`px-3 py-1 rounded ${currentPage === i
               ? 'bg-indigo-600 text-white'
-              : darkMode 
-                ? 'bg-gray-700 hover:bg-gray-600' 
+              : darkMode
+                ? 'bg-gray-700 hover:bg-gray-600'
                 : 'bg-gray-200 hover:bg-gray-300'
-          }`}
+            }`}
         >
           {i}
         </button>
@@ -258,9 +294,8 @@ const AdminUsers = () => {
           <button
             onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className={`px-3 py-1 rounded ${
-              darkMode ? 'bg-gray-700' : 'bg-gray-200'
-            } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`px-3 py-1 rounded ${darkMode ? 'bg-gray-700' : 'bg-gray-200'
+              } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Previous
           </button>
@@ -268,9 +303,8 @@ const AdminUsers = () => {
           <button
             onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className={`px-3 py-1 rounded ${
-              darkMode ? 'bg-gray-700' : 'bg-gray-200'
-            } ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`px-3 py-1 rounded ${darkMode ? 'bg-gray-700' : 'bg-gray-200'
+              } ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Next
           </button>
@@ -291,11 +325,10 @@ const AdminUsers = () => {
                 placeholder="Search users..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full px-4 py-2 pl-10 rounded-lg ${
-                  darkMode 
-                    ? 'bg-gray-800 border-gray-700 text-white' 
+                className={`w-full px-4 py-2 pl-10 rounded-lg ${darkMode
+                    ? 'bg-gray-800 border-gray-700 text-white'
                     : 'bg-white border-gray-200'
-                } border shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                  } border shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500`}
               />
               <FiSearch className="absolute text-gray-400 left-3 top-3" size={18} />
             </form>
@@ -308,9 +341,8 @@ const AdminUsers = () => {
           </div>
         ) : (
           <>
-            <div className={`overflow-hidden rounded-lg shadow ${
-              darkMode ? 'bg-gray-800' : 'bg-white'
-            }`}>
+            <div className={`overflow-hidden rounded-lg shadow ${darkMode ? 'bg-gray-800' : 'bg-white'
+              }`}>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
@@ -343,7 +375,7 @@ const AdminUsers = () => {
                       users.map((user) => {
                         const isStatusLoading = actionLoading[user._id] === 'status';
                         const isDeleteLoading = actionLoading[user._id] === 'delete';
-                        
+
                         return (
                           <tr key={user._id} className={darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -352,9 +384,8 @@ const AdminUsers = () => {
                                   {user.avatar ? (
                                     <img className="w-10 h-10 rounded-full" src={user.avatar} alt={user.name} />
                                   ) : (
-                                    <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                                      darkMode ? 'bg-gray-600' : 'bg-gray-200'
-                                    }`}>
+                                    <div className={`flex items-center justify-center w-10 h-10 rounded-full ${darkMode ? 'bg-gray-600' : 'bg-gray-200'
+                                      }`}>
                                       <span className="font-medium text-gray-700 dark:text-gray-300">
                                         {user.name.charAt(0).toUpperCase()}
                                       </span>
@@ -377,20 +408,18 @@ const AdminUsers = () => {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                user.role === 'Admin' 
-                                  ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200' 
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.role === 'Admin'
+                                  ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
                                   : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              }`}>
+                                }`}>
                                 {user.role}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                user.isBlocked 
-                                  ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' 
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.isBlocked
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                   : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              }`}>
+                                }`}>
                                 {user.isBlocked ? 'Blocked' : 'Active'}
                               </span>
                             </td>
@@ -399,11 +428,10 @@ const AdminUsers = () => {
                                 <button
                                   onClick={() => !isStatusLoading && toggleUserStatus(user._id, user.isBlocked, user.name)}
                                   disabled={isStatusLoading || isDeleteLoading}
-                                  className={`p-2 rounded-full ${
-                                    user.isBlocked 
-                                      ? 'bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800' 
+                                  className={`p-2 rounded-full ${user.isBlocked
+                                      ? 'bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800'
                                       : 'bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800'
-                                  } ${isStatusLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    } ${isStatusLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                   title={user.isBlocked ? 'Unblock User' : 'Block User'}
                                 >
                                   {isStatusLoading ? (
@@ -417,9 +445,8 @@ const AdminUsers = () => {
                                 <button
                                   onClick={() => !isDeleteLoading && deleteUser(user._id, user.name)}
                                   disabled={isDeleteLoading || isStatusLoading}
-                                  className={`p-2 text-red-600 bg-red-100 rounded-full hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 ${
-                                    isDeleteLoading ? 'opacity-50 cursor-not-allowed' : ''
-                                  }`}
+                                  className={`p-2 text-red-600 bg-red-100 rounded-full hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 ${isDeleteLoading ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
                                   title="Delete User"
                                 >
                                   {isDeleteLoading ? (
