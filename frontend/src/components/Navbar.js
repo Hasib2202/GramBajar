@@ -54,7 +54,7 @@ export default function Navbar({ darkMode, toggleTheme }) {
           <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
             darkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>Categories</a>
-          <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
+          <a href="about" className={`font-medium hover:text-green-500 transition-colors ${
             darkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>About</a>
           <a href="faqs" className={`font-medium hover:text-green-500 transition-colors ${
@@ -126,7 +126,7 @@ export default function Navbar({ darkMode, toggleTheme }) {
             <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
               darkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>Categories</a>
-            <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
+            <a href="about" className={`font-medium hover:text-green-500 transition-colors ${
               darkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>About</a>
             <a href="faqs" className={`font-medium hover:text-green-500 transition-colors ${

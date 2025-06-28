@@ -14,5 +14,7 @@ router.get('/products/:id', validateObjectId, getPublicProductById);
 
 // Public category routes
 router.get('/categories', getPublicCategories); // Now uses correct function
+// Add this route
+router.get('/products/:id', validateObjectId, getPublicProductById);
 
 export default router;

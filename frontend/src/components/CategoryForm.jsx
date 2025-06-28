@@ -8,6 +8,7 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errors, setErrors] = useState({});
+  const [backendError, setBackendError] = useState(''); // Added for backend error messages
 
   const validateForm = () => {
     const newErrors = {};
@@ -16,10 +17,7 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
       newErrors.name = 'Category name is required';
     }
     
-    if (!image) {
-      newErrors.image = 'Category image is required';
-    }
-    
+    // Removed image validation here to allow updates without changing image
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -29,10 +27,7 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
     if (file) {
       setNewImage(file);
       setImage(URL.createObjectURL(file));
-      
-      if (errors.image) {
-        setErrors(prev => ({ ...prev, image: '' }));
-      }
+      setErrors(prev => ({ ...prev, image: '' }));
     }
   };
 
@@ -44,12 +39,15 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
     }
     
     setIsSubmitting(true);
+    setBackendError(''); // Reset previous errors
     
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
       
       if (!token) {
+        setBackendError('Authentication failed. Please log in again.');
+        setIsSubmitting(false);
         return;
       }
 
@@ -74,12 +72,12 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
         body: formData
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save category');
+        throw new Error(data.message || 'Failed to save category');
       }
 
-      const data = await response.json();
       if (category) {
         onCategoryUpdated(data.category);
       } else {
@@ -89,6 +87,7 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
       onClose();
     } catch (error) {
       console.error('Save category error:', error);
+      setBackendError(error.message || 'An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
     }
@@ -96,11 +95,15 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
 
   const handleDelete = async () => {
     setIsSubmitting(true);
+    setBackendError('');
+    
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
       
       if (!token) {
+        setBackendError('Authentication failed. Please log in again.');
+        setIsSubmitting(false);
         return;
       }
 
@@ -118,6 +121,7 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
       onClose();
     } catch (error) {
       console.error('Delete category error:', error);
+      setBackendError(error.message || 'An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
       setShowDeleteConfirm(false);
@@ -127,9 +131,24 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
   return (
     <div>
       <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-        <h3 className="mb-6 text-lg font-bold">
-          {category ? 'Edit Category' : 'Create New Category'}
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold">
+            {category ? 'Edit Category' : 'Create New Category'}
+          </h3>
+          <button 
+            onClick={onClose} 
+            className={`p-1 rounded-full ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}
+          >
+            <FiX size={20} />
+          </button>
+        </div>
+        
+        {/* Display backend errors */}
+        {backendError && (
+          <div className={`mb-4 p-3 rounded-lg ${darkMode ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-700'}`}>
+            {backendError}
+          </div>
+        )}
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -141,9 +160,8 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                if (errors.name) {
-                  setErrors(prev => ({ ...prev, name: '' }));
-                }
+                setErrors(prev => ({ ...prev, name: '' }));
+                setBackendError('');
               }}
               className={`w-full px-4 py-2 rounded-lg ${
                 darkMode ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200'
@@ -157,15 +175,13 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
           
           <div className="mb-4">
             <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Category Image *
+              Category Image {!category && '*'}
             </label>
             
             <div className="flex items-center">
               <label className={`flex items-center justify-center px-4 py-2 rounded-lg cursor-pointer ${
                 darkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
-              } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} ${
-                errors.image ? 'border border-red-500' : ''
-              }`}>
+              } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <FiUpload className="mr-2" />
                 {image ? 'Change Image' : 'Upload Image'}
                 <input
@@ -183,9 +199,10 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
                   onClick={() => {
                     setImage('');
                     setNewImage(null);
-                    setErrors(prev => ({ ...prev, image: 'Category image is required' }));
+                    setErrors(prev => ({ ...prev, image: '' }));
                   }}
                   className="p-2 ml-3 text-red-600 rounded-full hover:bg-red-100 dark:hover:bg-red-900"
+                  disabled={isSubmitting}
                 >
                   <FiTrash2 size={16} />
                 </button>
@@ -261,10 +278,21 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
               Are you sure you want to delete the category "{category.name}"? 
               This will remove the category from all products and cannot be undone.
             </p>
+            
+            {backendError && (
+              <div className={`mb-4 p-3 rounded-lg ${darkMode ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-700'}`}>
+                {backendError}
+              </div>
+            )}
+            
             <div className="flex justify-end space-x-3">
               <button
-                onClick={() => setShowDeleteConfirm(false)}
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setBackendError('');
+                }}
                 className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+                disabled={isSubmitting}
               >
                 Cancel
               </button>

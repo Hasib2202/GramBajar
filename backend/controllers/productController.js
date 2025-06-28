@@ -240,7 +240,6 @@ export const updateProduct = [
     }
   }
 ];
-
 // Delete product
 export const deleteProduct = [
   validateObjectId,
