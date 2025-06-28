@@ -140,7 +140,15 @@ export const getProductById = [
   }
 ];
 
-// Update product (fixed isActive handling)
+// Helper function to extract public ID from Cloudinary URL
+function extractPublicId(url) {
+  const parts = url.split('/');
+  const folder = parts[parts.length - 2];
+  const filename = parts[parts.length - 1].split('.')[0];
+  return `${folder}/${filename}`;
+}
+
+// Update product with proper image handling
 export const updateProduct = [
   validateObjectId,
   async (req, res) => {
@@ -162,6 +170,16 @@ export const updateProduct = [
         updates.isActive = existingProduct.isActive;
       }
 
+      // Get images to keep from request
+      const keptImages = req.body.images 
+        ? JSON.parse(req.body.images)
+        : existingProduct.images;
+
+      // Find images to delete
+      const imagesToDelete = existingProduct.images.filter(
+        img => !keptImages.includes(img)
+      );
+
       // Upload new images
       const uploadedImages = [];
       for (const image of newImages) {
@@ -173,9 +191,10 @@ export const updateProduct = [
         fs.unlinkSync(image.path);
       }
 
-      // Combine images
-      updates.images = [...existingProduct.images, ...uploadedImages];
+      // Combine kept images with new images
+      updates.images = [...keptImages, ...uploadedImages];
 
+      // Validate category if changed
       if (updates.category) {
         const categoryExists = await Category.findById(updates.category);
         if (!categoryExists) {
@@ -186,10 +205,25 @@ export const updateProduct = [
         }
       }
 
+      // Update the product
       const product = await Product.findByIdAndUpdate(id, updates, {
         new: true,
         runValidators: true
       }).populate('category', 'name');
+
+      // Delete removed images in background
+      if (imagesToDelete.length > 0) {
+        (async () => {
+          for (const imgUrl of imagesToDelete) {
+            try {
+              const publicId = extractPublicId(imgUrl);
+              await cloudinary.uploader.destroy(publicId);
+            } catch (err) {
+              console.error('Error deleting old image:', err);
+            }
+          }
+        })();
+      }
 
       res.json({
         success: true,

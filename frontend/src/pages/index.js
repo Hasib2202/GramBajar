@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ImageCarousel from '../components/ImageCarousel';
+import ProductCard from '../components/ProductCard'; // New component for product cards
 
 // Simple icon components
 const FiLeaf = () => <span>🌱</span>;
@@ -13,12 +14,15 @@ const FiShield = () => <span>🛡️</span>;
 const FiStar = () => <span>⭐</span>;
 const FiArrowRight = () => <span>→</span>;
 const FiHeart = () => <span>❤️</span>;
+const FiArrowLeft = () => <span>←</span>;
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [categories, setCategories] = useState([]);
   const [latestProducts, setLatestProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const isDark = false;
@@ -53,26 +57,29 @@ export default function Home() {
     }
   };
 
-  const fetchLatestProducts = async () => {
+  const fetchLatestProducts = async (page = 1) => {
+    setLoading(true);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/products`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/products?page=${page}&limit=6`
       );
       const data = await response.json();
       if (data.success) {
         setLatestProducts(data.products);
+        setTotalPages(data.pages);
+        setCurrentPage(data.page);
       }
       setLoading(false);
     } catch (error) {
       console.error('Error fetching products:', error);
       // Fallback data if API fails
       setLatestProducts([
-        { _id: '1', name: 'Frozen Shrimp 300g', price: 200, originalPrice: null, image: '/images/products/shrimp.jpg', rating: 4.5, reviews: 2, inStock: true, discount: null },
-        { _id: '2', name: 'Frozen Shrimp 2kg', price: 304, originalPrice: 400, image: '/images/products/shrimp-2kg.jpg', rating: 4.0, reviews: 1, inStock: true, discount: 24 },
-        { _id: '3', name: 'Frozen Spinach 500g', price: 291, originalPrice: 300, image: '/images/products/spinach.jpg', rating: 4.5, reviews: 2, inStock: true, discount: 3 },
-        { _id: '4', name: 'Mangosteen Organic 500g', price: 25, originalPrice: null, image: '/images/products/mangosteen.jpg', rating: 5.0, reviews: 1, inStock: true, discount: null },
-        { _id: '5', name: 'Chicken 1 KG', price: 164, originalPrice: 200, image: '/images/products/chicken.jpg', rating: 4.5, reviews: 1, inStock: true, discount: 18 },
-        { _id: '6', name: 'Fresh Tomatoes 1kg', price: 45, originalPrice: 50, image: '/images/products/tomatoes.jpg', rating: 4.8, reviews: 5, inStock: true, discount: 10 }
+        { _id: '1', title: 'Frozen Shrimp 300g', price: 200, discount: null, images: '/images/products/shrimp.jpg', rating: 4.5, reviews: 2, stock: 10 },
+        { _id: '2', title: 'Frozen Shrimp 2kg', price: 400, discount: 24, images: '/images/products/shrimp-2kg.jpg', rating: 4.0, reviews: 1, stock: 5 },
+        { _id: '3', title: 'Frozen Spinach 500g', price: 300, discount: 3, images: '/images/products/spinach.jpg', rating: 4.5, reviews: 2, stock: 15 },
+        { _id: '4', title: 'Mangosteen Organic 500g', price: 25, discount: null, images: '/images/products/mangosteen.jpg', rating: 5.0, reviews: 1, stock: 20 },
+        { _id: '5', title: 'Chicken 1 KG', price: 200, discount: 18, images: '/images/products/chicken.jpg', rating: 4.5, reviews: 1, stock: 8 },
+        { _id: '6', title: 'Fresh Tomatoes 1kg', price: 50, discount: 10, images: '/images/products/tomatoes.jpg', rating: 4.8, reviews: 5, stock: 30 }
       ]);
       setLoading(false);
     }
@@ -98,6 +105,13 @@ export default function Home() {
   const navigateToProducts = (categoryId = null) => {
     const url = categoryId ? `/products?category=${categoryId}` : '/products';
     window.location.href = url;
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      fetchLatestProducts(newPage);
+      scrollToProducts();
+    }
   };
 
   return (
@@ -285,81 +299,82 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {latestProducts.map((product) => (
-                <div key={product._id} className={`rounded-2xl overflow-hidden shadow-lg transition-all hover:scale-105 relative ${
-                  darkMode ? 'bg-gray-700' : 'bg-white'
+            <>
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {latestProducts.map((product) => (
+                  <ProductCard 
+                    key={product._id}
+                    product={product}
+                    darkMode={darkMode}
+                  />
+                ))}
+              </div>
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className={`flex justify-center items-center mt-12 space-x-4 ${
+                  darkMode ? 'text-white' : 'text-gray-800'
                 }`}>
-                  {product.discount && (
-                    <div className="absolute z-10 px-2 py-1 text-sm font-bold text-white bg-red-500 rounded-lg top-4 left-4">
-                      -{product.discount}%
-                    </div>
-                  )}
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-2 rounded-full ${
+                      currentPage === 1 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <FiArrowLeft size={24} />
+                  </button>
                   
-                  <div className={`aspect-square flex items-center justify-center ${
-                    darkMode ? 'bg-gray-600' : 'bg-gray-100'
-                  }`}>
-                    {product.image ? (
-                      <img 
-                        src={product.image} 
-                        alt={product.name}
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <div className="text-6xl">📦</div>
+                  <div className="flex space-x-2">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else {
+                        // Show dynamic page numbers for many pages
+                        const startPage = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+                        pageNum = startPage + i;
+                      }
+                      return pageNum;
+                    }).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`w-10 h-10 rounded-full ${
+                          page === currentPage
+                            ? 'bg-green-500 text-white'
+                            : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    
+                    {totalPages > 5 && currentPage < totalPages - 2 && (
+                      <span className="mx-1">...</span>
                     )}
                   </div>
                   
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`text-sm px-2 py-1 rounded ${
-                        product.inStock 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.inStock ? 'In Stock' : 'Out of Stock'}
-                      </span>
-                      <button className="text-gray-400 hover:text-red-500">
-                        <FiHeart />
-                      </button>
-                    </div>
-                    
-                    <h3 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {product.name}
-                    </h3>
-                    
-                    <div className="flex items-center mb-3">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <span key={i} className={i < Math.floor(product.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}>
-                            <FiStar />
-                          </span>
-                        ))}
-                      </div>
-                      <span className={`ml-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        ({product.reviews || 0} reviews)
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                          ৳{product.price}
-                        </span>
-                        {product.originalPrice && (
-                          <span className="text-gray-500 line-through">
-                            ৳{product.originalPrice}
-                          </span>
-                        )}
-                      </div>
-                      <button className="px-4 py-2 font-medium text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600">
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-2 rounded-full ${
+                      currentPage === totalPages 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <FiArrowRight size={24} />
+                  </button>
+                  
+                  <span className="ml-4">
+                    Page {currentPage} of {totalPages}
+                  </span>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </section>

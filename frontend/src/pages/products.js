@@ -1,4 +1,3 @@
-// src/pages/products.js
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -23,13 +22,15 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid');
   
-  // Search and filter states
+  // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
-  const [sortBy, setSortBy] = useState('name'); // 'name', 'price-asc', 'price-desc', 'date'
+  const [sortBy, setSortBy] = useState('date:desc');
+  
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -41,7 +42,7 @@ export default function ProductsPage() {
     setDarkMode(isDark);
     document.documentElement.classList.toggle('dark', isDark);
     
-    // Get category from URL if present
+    // Initialize from URL query
     if (router.query.category) {
       setSelectedCategory(router.query.category);
     }
@@ -56,7 +57,7 @@ export default function ProductsPage() {
   const fetchCategories = async () => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/categories`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/categories`
       );
       const data = await response.json();
       if (data.success) {
@@ -64,7 +65,6 @@ export default function ProductsPage() {
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
-      // Fallback categories
       setCategories([
         { _id: '1', name: 'All Products', productCount: 0 },
         { _id: '2', name: 'Fish', productCount: 25 },
@@ -86,27 +86,46 @@ export default function ProductsPage() {
         ...(selectedCategory && selectedCategory !== 'all' && { category: selectedCategory }),
         ...(priceRange.min > 0 && { minPrice: priceRange.min.toString() }),
         ...(priceRange.max < 1000 && { maxPrice: priceRange.max.toString() }),
-        ...(sortBy && { sort: sortBy })
+        sort: sortBy
       });
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products?${params}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/products?${params}`
       );
       const data = await response.json();
       
       if (data.success) {
         setProducts(data.products);
-        setTotalPages(data.totalPages || 1);
-        setTotalProducts(data.totalProducts || 0);
+        setTotalPages(data.pages || 1);
+        setTotalProducts(data.total || 0);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
       // Fallback products
       setProducts([
-        { _id: '1', name: 'Fresh Salmon', price: 450, originalPrice: 500, image: null, rating: 4.5, reviews: 12, inStock: true, category: 'Fish' },
-        { _id: '2', name: 'Organic Apples', price: 120, originalPrice: null, image: null, rating: 4.8, reviews: 25, inStock: true, category: 'Fruits' },
-        { _id: '3', name: 'Free Range Chicken', price: 280, originalPrice: 320, image: null, rating: 4.6, reviews: 18, inStock: true, category: 'Meat' },
-        { _id: '4', name: 'Fresh Spinach', price: 45, originalPrice: null, image: null, rating: 4.7, reviews: 8, inStock: true, category: 'Vegetables' }
+        { 
+          _id: '1', 
+          title: 'Fresh Salmon', 
+          price: 450, 
+          discount: 10, 
+          images: ['/images/products/salmon.jpg'], 
+          rating: 4.5, 
+          reviews: 12, 
+          stock: 15,
+          category: { name: 'Fish' } 
+        },
+        { 
+          _id: '2', 
+          title: 'Organic Apples', 
+          price: 120, 
+          discount: 0, 
+          images: ['/images/products/apples.jpg'], 
+          rating: 4.8, 
+          reviews: 25, 
+          stock: 30,
+          category: { name: 'Fruits' } 
+        },
+        // ... more products
       ]);
       setTotalProducts(4);
       setTotalPages(1);
@@ -122,7 +141,7 @@ export default function ProductsPage() {
 
   const handleSearchChange = useCallback((e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1);
   }, []);
 
   const handleCategoryChange = (categoryId) => {
@@ -145,7 +164,7 @@ export default function ProductsPage() {
     setSearchQuery('');
     setSelectedCategory('');
     setPriceRange({ min: 0, max: 1000 });
-    setSortBy('name');
+    setSortBy('date:desc');
     setCurrentPage(1);
   };
 
@@ -161,17 +180,36 @@ export default function ProductsPage() {
       <Navbar darkMode={darkMode} toggleTheme={toggleTheme} />
 
       {/* Page Header */}
-      <div className={`${darkMode ? 'bg-gray-800' : 'bg-green-50'} py-8 px-4`}>
-        <div className="mx-auto max-w-7xl">
-          <h1 className={`text-3xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-            Products
-          </h1>
-          <p className={`text-lg ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            {selectedCategory ? `${selectedCategoryName} ` : ''}
-            {totalProducts > 0 ? `${totalProducts} products found` : 'Browse our fresh selection'}
-          </p>
-        </div>
-      </div>
+      <div className={`${darkMode ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-r from-green-200 via-white to-green-200'} py-12 px-6`}>
+  <div className="flex flex-col gap-6 mx-auto max-w-7xl sm:flex-row sm:items-center sm:justify-between">
+    {/* Title / Count */}
+    <div>
+      <h1 className={`text-4xl sm:text-5xl font-extrabold bg-clip-text text-transparent ${
+        darkMode ? 'bg-gradient-to-r from-green-300 to-green-500' : 'bg-gradient-to-r from-green-600 to-green-800'
+      }`}>
+        {selectedCategory ? selectedCategoryName : 'All Products'}
+      </h1>
+      <p className={`mt-2 text-sm sm:text-base ${
+        darkMode ? 'text-gray-400' : 'text-gray-700'
+      }`}>
+        {totalProducts > 0
+          ? `${totalProducts.toLocaleString()} product${totalProducts > 1 ? 's' : ''} found`
+          : 'No products found — check back soon!'}
+      </p>
+    </div>
+
+    {/* Optional Actions (e.g. filter button) */}
+    <div className="flex space-x-4">
+      <button
+        className="inline-flex items-center px-5 py-3 font-medium text-white transition bg-green-600 rounded-lg shadow-lg hover:bg-green-700"
+      >
+        <FiFilter className="mr-2 text-lg" />
+        Filter
+      </button>
+      {/* Add more action buttons here if you like */}
+    </div>
+  </div>
+</div>
 
       <div className="px-4 py-8 mx-auto max-w-7xl">
         <div className="flex flex-col gap-8 lg:flex-row">

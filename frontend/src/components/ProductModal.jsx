@@ -41,7 +41,7 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setNewImages(files);
-    
+
     // Create preview URLs
     const previews = files.map(file => URL.createObjectURL(file));
     setPreviewImages(previews);
@@ -71,11 +71,11 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
-      
+
       if (!token) {
         toast.error('Session expired, please login again');
         return;
@@ -88,6 +88,9 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
       formPayload.append('category', formData.category);
       formPayload.append('stock', formData.stock);
       formPayload.append('discount', formData.discount);
+
+      // Send list of kept images
+      formPayload.append('images', JSON.stringify(formData.images));
 
       // Append new images
       newImages.forEach(file => {
@@ -132,7 +135,7 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
       } else {
         onProductCreated(data.product);
       }
-      
+
       // REMOVED THE SUCCESS TOAST HERE
       onClose();
     } catch (error) {
@@ -150,7 +153,7 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
           <h2 className="text-xl font-bold">
             {product ? 'Edit Product' : 'Add New Product'}
           </h2>
-          <button 
+          <button
             onClick={onClose}
             className={`p-2 rounded-full ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
             disabled={isSubmitting}
@@ -158,7 +161,7 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
             <FiX size={24} />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
@@ -169,13 +172,12 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
                 value={formData.title}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-2 rounded-lg ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
-                } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                className={`w-full px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
+                  } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                 disabled={isSubmitting}
               />
             </div>
-            
+
             <div>
               <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Category *</label>
               <select
@@ -183,9 +185,8 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
                 value={formData.category}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-2 rounded-lg ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
-                } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                className={`w-full px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
+                  } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                 disabled={isSubmitting}
               >
                 <option value="">Select Category</option>
@@ -194,7 +195,7 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Price ($) *</label>
               <input
@@ -205,13 +206,12 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
                 min="0"
                 step="0.01"
                 required
-                className={`w-full px-4 py-2 rounded-lg ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
-                } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                className={`w-full px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
+                  } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                 disabled={isSubmitting}
               />
             </div>
-            
+
             <div>
               <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Stock *</label>
               <input
@@ -221,13 +221,12 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
                 onChange={handleChange}
                 min="0"
                 required
-                className={`w-full px-4 py-2 rounded-lg ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
-                } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                className={`w-full px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
+                  } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                 disabled={isSubmitting}
               />
             </div>
-            
+
             <div>
               <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Discount (%)</label>
               <input
@@ -237,14 +236,13 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
                 onChange={handleChange}
                 min="0"
                 max="100"
-                className={`w-full px-4 py-2 rounded-lg ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
-                } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                className={`w-full px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
+                  } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                 disabled={isSubmitting}
               />
             </div>
           </div>
-          
+
           <div className="mt-4">
             <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Description *</label>
             <textarea
@@ -253,21 +251,19 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
               onChange={handleChange}
               rows="3"
               required
-              className={`w-full px-4 py-2 rounded-lg ${
-                darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
-              } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+              className={`w-full px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'
+                } border focus:outline-none focus:ring-2 focus:ring-indigo-500`}
               disabled={isSubmitting}
             ></textarea>
           </div>
-          
+
           <div className="mt-6">
             <label className={`block mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Product Images
             </label>
             <div className="flex items-center">
-              <label className={`flex items-center justify-center px-4 py-2 rounded-lg cursor-pointer ${
-                darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-              } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <label className={`flex items-center justify-center px-4 py-2 rounded-lg cursor-pointer ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <FiUpload className="mr-2" />
                 Upload Images
                 <input
@@ -283,7 +279,7 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
                 Max 10 images (max 1MB each)
               </span>
             </div>
-            
+
             <div className="flex flex-wrap gap-2 mt-4">
               {/* Existing images */}
               {formData.images.map((img, index) => (
@@ -303,7 +299,7 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
                   </button>
                 </div>
               ))}
-              
+
               {/* New image previews */}
               {previewImages.map((img, index) => (
                 <div key={`new-${index}`} className="relative group">
@@ -324,25 +320,23 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
               ))}
             </div>
           </div>
-          
+
           <div className="flex justify-end mt-6 space-x-3">
             <button
               type="button"
               onClick={onClose}
-              className={`px-4 py-2 rounded-lg ${
-                darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-              }`}
+              className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                }`}
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className={`px-4 py-2 rounded-lg ${
-                isSubmitting 
-                  ? 'bg-indigo-400 cursor-not-allowed' 
+              className={`px-4 py-2 rounded-lg ${isSubmitting
+                  ? 'bg-indigo-400 cursor-not-allowed'
                   : 'bg-indigo-600 hover:bg-indigo-700'
-              } text-white`}
+                } text-white`}
               disabled={isSubmitting}
             >
               {isSubmitting ? (

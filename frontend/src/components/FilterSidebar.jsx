@@ -1,4 +1,3 @@
-// components/FilterSidebar.js
 import { useState, useEffect } from 'react';
 
 // Icons
@@ -31,15 +30,10 @@ export default function FilterSidebar({
   }, [priceRange]);
 
   const handlePriceChange = (type, value) => {
-    const newRange = { ...localPriceRange, [type]: parseInt(value) };
+    const val = value === '' ? (type === 'min' ? 0 : 1000) : parseInt(value);
+    const newRange = { ...localPriceRange, [type]: val };
     setLocalPriceRange(newRange);
-    
-    // Debounce the API call
-    const timeoutId = setTimeout(() => {
-      onPriceRangeChange(newRange);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
+    onPriceRangeChange(newRange);
   };
 
   const toggleSection = (section) => {
@@ -50,18 +44,18 @@ export default function FilterSidebar({
   };
 
   const sortOptions = [
-    { value: 'name', label: 'Name (A-Z)' },
-    { value: 'name-desc', label: 'Name (Z-A)' },
-    { value: 'price-asc', label: 'Price (Low to High)' },
-    { value: 'price-desc', label: 'Price (High to Low)' },
-    { value: 'date', label: 'Newest First' },
-    { value: 'rating', label: 'Highest Rated' }
+    { value: 'date:desc', label: 'Newest First' },
+    { value: 'price:asc', label: 'Price: Low to High' },
+    { value: 'price:desc', label: 'Price: High to Low' },
+    { value: 'name:asc', label: 'Name: A to Z' },
+    { value: 'name:desc', label: 'Name: Z to A' },
+    { value: 'rating:desc', label: 'Highest Rated' }
   ];
 
   const activeFiltersCount = [
     selectedCategory && selectedCategory !== 'all',
     localPriceRange.min > 0 || localPriceRange.max < 1000,
-    sortBy !== 'name'
+    sortBy !== 'date:desc'
   ].filter(Boolean).length;
 
   const sidebarContent = (
@@ -149,7 +143,7 @@ export default function FilterSidebar({
             darkMode ? 'text-white' : 'text-gray-900'
           }`}
         >
-          Price Range
+          Price Range (৳)
           {expandedSections.price ? <FiChevronUp /> : <FiChevronDown />}
         </button>
         
@@ -196,36 +190,6 @@ export default function FilterSidebar({
               </div>
             </div>
             
-            {/* Price Range Slider */}
-            <div className="px-2">
-              <div className="relative">
-                <input
-                  type="range"
-                  min="0"
-                  max="1000"
-                  step="10"
-                  value={localPriceRange.min}
-                  onChange={(e) => handlePriceChange('min', e.target.value)}
-                  className="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb"
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max="1000"
-                  step="10"
-                  value={localPriceRange.max}
-                  onChange={(e) => handlePriceChange('max', e.target.value)}
-                  className="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb"
-                />
-              </div>
-              <div className={`flex justify-between text-sm mt-2 ${
-                darkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                <span>৳0</span>
-                <span>৳1000+</span>
-              </div>
-            </div>
-
             {/* Quick Price Filters */}
             <div className="grid grid-cols-2 gap-2">
               {[
@@ -236,7 +200,10 @@ export default function FilterSidebar({
               ].map((range) => (
                 <button
                   key={range.label}
-                  onClick={() => onPriceRangeChange(range)}
+                  onClick={() => {
+                    setLocalPriceRange(range);
+                    onPriceRangeChange(range);
+                  }}
                   className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                     localPriceRange.min === range.min && localPriceRange.max === range.max
                       ? 'bg-green-500 text-white border-green-500'

@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@/context/ThemeContext'
 import '@/styles/globals.css'
 import '../styles/fonts.css';
+import Head from 'next/head';
 import { Toaster } from 'react-hot-toast';
 
 export default function App({ Component, pageProps }) {
@@ -30,6 +31,13 @@ export default function App({ Component, pageProps }) {
           },
         }}
       />
+      <Head>
+        <link
+          rel="preload"
+          as="image"
+          href="/images/veg.jpg"   
+        />
+      </Head>
       <Component {...pageProps} />
     </ThemeProvider>
   )
