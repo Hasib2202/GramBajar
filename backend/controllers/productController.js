@@ -4,7 +4,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import dotenv from "dotenv";
 import validateObjectId from '../middleware/validateObjectId.js';
-dotenv.config();  
+dotenv.config();
 
 // Configure Cloudinary
 cloudinary.config({
@@ -14,14 +14,12 @@ cloudinary.config({
   secure: true
 });
 
-// Create new product - FIXED
+// Create new product
 export const createProduct = async (req, res) => {
   try {
     const { title, description, price, category, stock, discount } = req.body;
-    const images = req.files || []; // CORRECTED ACCESS
-    
-    console.log('Create product files:', req.files);
-    
+    const images = req.files || [];
+
     // Validate category
     const categoryExists = await Category.findById(category);
     if (!categoryExists) {
@@ -49,11 +47,12 @@ export const createProduct = async (req, res) => {
       category,
       stock,
       images: uploadedImages,
-      discount
+      discount,
+      isActive: true
     });
 
     await newProduct.save();
-    
+
     res.status(201).json({
       success: true,
       message: 'Product created successfully',
@@ -73,28 +72,28 @@ export const createProduct = async (req, res) => {
 export const getProducts = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = '', category } = req.query;
-    
+
     let query = {};
-    
+
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } }
       ];
     }
-    
+
     if (category) {
       query.category = category;
     }
-    
+
     const products = await Product.find(query)
-      .populate('category', 'name')
+      .populate('category', 'name image')
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
-    
+
     const total = await Product.countDocuments(query);
-    
+
     res.json({
       success: true,
       products,
@@ -117,40 +116,38 @@ export const getProductById = [
   validateObjectId,
   async (req, res) => {
     try {
-    const product = await Product.findById(req.params.id).populate('category', 'name');
-    
-    if (!product) {
-      return res.status(404).json({
+      const product = await Product.findById(req.params.id).populate('category', 'name image');
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: 'Product not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        product
+      });
+    } catch (error) {
+      console.error('Get product error:', error);
+      res.status(500).json({
         success: false,
-        message: 'Product not found'
+        message: 'Failed to get product',
+        error: error.message
       });
     }
-    
-    res.json({
-      success: true,
-      product
-    });
-  } catch (error) {
-    console.error('Get product error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get product',
-      error: error.message
-    });
-  }
   }
 ];
 
-// Update product - FIXED
+// Update product (fixed isActive handling)
 export const updateProduct = [
   validateObjectId,
   async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
-      const newImages = req.files || []; // CORRECTED ACCESS
-      
-      console.log('Update product files:', req.files);
+      const newImages = req.files || [];
 
       const existingProduct = await Product.findById(id);
       if (!existingProduct) {
@@ -158,6 +155,11 @@ export const updateProduct = [
           success: false,
           message: 'Product not found'
         });
+      }
+
+      // Preserve isActive if not provided
+      if (updates.isActive === undefined) {
+        updates.isActive = existingProduct.isActive;
       }
 
       // Upload new images
@@ -173,7 +175,7 @@ export const updateProduct = [
 
       // Combine images
       updates.images = [...existingProduct.images, ...uploadedImages];
-      
+
       if (updates.category) {
         const categoryExists = await Category.findById(updates.category);
         if (!categoryExists) {
@@ -183,12 +185,12 @@ export const updateProduct = [
           });
         }
       }
-      
+
       const product = await Product.findByIdAndUpdate(id, updates, {
         new: true,
         runValidators: true
       }).populate('category', 'name');
-      
+
       res.json({
         success: true,
         message: 'Product updated successfully',
@@ -205,31 +207,30 @@ export const updateProduct = [
   }
 ];
 
-// Delete product - FIXED
+// Delete product
 export const deleteProduct = [
   validateObjectId,
   async (req, res) => {
     try {
       const product = await Product.findByIdAndDelete(req.params.id);
-      
+
       if (!product) {
         return res.status(404).json({
           success: false,
           message: 'Product not found'
         });
       }
-      
-      // Delete images from Cloudinary - FIXED
+
+      // Delete images from Cloudinary
       for (const imageUrl of product.images) {
-        // Correct public ID extraction
         const pathParts = imageUrl.split('/');
         const folder = pathParts[pathParts.length - 2];
         const filename = pathParts[pathParts.length - 1].split('.')[0];
         const publicId = `${folder}/${filename}`;
-        
+
         await cloudinary.uploader.destroy(publicId);
       }
-      
+
       res.json({
         success: true,
         message: 'Product deleted successfully'
@@ -250,7 +251,7 @@ export const createCategory = async (req, res) => {
   try {
     const { name } = req.body;
     const image = req.file;
-    
+
     // Check if category exists
     const existingCategory = await Category.findOne({ name });
     if (existingCategory) {
@@ -259,7 +260,7 @@ export const createCategory = async (req, res) => {
         message: 'Category already exists'
       });
     }
-    
+
     // Upload image to Cloudinary
     let imageUrl = '';
     if (image) {
@@ -268,12 +269,12 @@ export const createCategory = async (req, res) => {
         transformation: [{ width: 500, height: 500, crop: 'limit' }]
       });
       imageUrl = result.secure_url;
-      fs.unlinkSync(image.path); // Remove temp file
+      fs.unlinkSync(image.path);
     }
-    
+
     const newCategory = new Category({ name, image: imageUrl });
     await newCategory.save();
-    
+
     res.status(201).json({
       success: true,
       message: 'Category created successfully',
@@ -307,13 +308,13 @@ export const getCategories = async (req, res) => {
   }
 };
 
-// Update category
+// Update category (fixed image deletion)
 export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const { name } = req.body;
     const image = req.file;
-    
+
     const category = await Category.findById(id);
     if (!category) {
       return res.status(404).json({
@@ -321,30 +322,33 @@ export const updateCategory = async (req, res) => {
         message: 'Category not found'
       });
     }
-    
+
     let imageUrl = category.image;
-    // Upload new image if provided
     if (image) {
       // Delete old image if exists
       if (category.image) {
-        const publicId = category.image.split('/').pop().split('.')[0];
-        await cloudinary.uploader.destroy(`grambajar/categories/${publicId}`);
+        const pathParts = category.image.split('/');
+        const folder = pathParts[pathParts.length - 2];
+        const filename = pathParts[pathParts.length - 1].split('.')[0];
+        const publicId = `${folder}/${filename}`;
+        await cloudinary.uploader.destroy(publicId);
       }
-      
+
+      // Upload new image
       const result = await cloudinary.uploader.upload(image.path, {
         folder: 'grambajar/categories',
         transformation: [{ width: 500, height: 500, crop: 'limit' }]
       });
       imageUrl = result.secure_url;
-      fs.unlinkSync(image.path); // Remove temp file
+      fs.unlinkSync(image.path);
     }
-    
+
     const updatedCategory = await Category.findByIdAndUpdate(
       id,
       { name, image: imageUrl },
       { new: true, runValidators: true }
     );
-    
+
     res.json({
       success: true,
       message: 'Category updated successfully',
@@ -364,26 +368,29 @@ export const updateCategory = async (req, res) => {
 export const deleteCategory = async (req, res) => {
   try {
     const category = await Category.findByIdAndDelete(req.params.id);
-    
+
     if (!category) {
       return res.status(404).json({
         success: false,
         message: 'Category not found'
       });
     }
-    
+
     // Delete image from Cloudinary
     if (category.image) {
-      const publicId = category.image.split('/').pop().split('.')[0];
-      await cloudinary.uploader.destroy(`grambajar/categories/${publicId}`);
+      const pathParts = category.image.split('/');
+      const folder = pathParts[pathParts.length - 2];
+      const filename = pathParts[pathParts.length - 1].split('.')[0];
+      const publicId = `${folder}/${filename}`;
+      await cloudinary.uploader.destroy(publicId);
     }
-    
+
     // Remove category from products
     await Product.updateMany(
       { category: category._id },
       { $unset: { category: "" } }
     );
-    
+
     res.json({
       success: true,
       message: 'Category deleted successfully'

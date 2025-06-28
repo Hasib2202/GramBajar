@@ -14,7 +14,6 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
   });
   const [newImages, setNewImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -133,7 +132,8 @@ const ProductModal = ({ product, categories, onClose, onProductCreated, onProduc
       } else {
         onProductCreated(data.product);
       }
-      toast.success(`Product ${product ? 'updated' : 'created'} successfully`);
+      
+      // REMOVED THE SUCCESS TOAST HERE
       onClose();
     } catch (error) {
       console.error('Error saving product:', error);

@@ -48,7 +48,7 @@ export default function Navbar({ darkMode, toggleTheme }) {
           <a href="/" className={`font-medium hover:text-green-500 transition-colors ${
             darkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>Home</a>
-          <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
+          <a href="products" className={`font-medium hover:text-green-500 transition-colors ${
             darkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>Products</a>
           <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
@@ -57,7 +57,7 @@ export default function Navbar({ darkMode, toggleTheme }) {
           <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
             darkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>About</a>
-          <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
+          <a href="faqs" className={`font-medium hover:text-green-500 transition-colors ${
             darkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>FAQs</a>
         </div>
@@ -120,7 +120,7 @@ export default function Navbar({ darkMode, toggleTheme }) {
             <a href="/" className={`font-medium hover:text-green-500 transition-colors ${
               darkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>Home</a>
-            <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
+            <a href="products" className={`font-medium hover:text-green-500 transition-colors ${
               darkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>Products</a>
             <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
@@ -129,7 +129,7 @@ export default function Navbar({ darkMode, toggleTheme }) {
             <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
               darkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>About</a>
-            <a href="#" className={`font-medium hover:text-green-500 transition-colors ${
+            <a href="faqs" className={`font-medium hover:text-green-500 transition-colors ${
               darkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>FAQs</a>
             

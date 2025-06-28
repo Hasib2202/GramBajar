@@ -3,52 +3,102 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import ImageCarousel from '../components/ImageCarousel';
 
 // Simple icon components
 const FiLeaf = () => <span>🌱</span>;
 const FiTruck = () => <span>🚚</span>;
 const FiClock = () => <span>⏰</span>;
 const FiShield = () => <span>🛡️</span>;
-const FiDollarSign = () => <span>💰</span>;
 const FiStar = () => <span>⭐</span>;
 const FiArrowRight = () => <span>→</span>;
 const FiHeart = () => <span>❤️</span>;
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [latestProducts, setLatestProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Remove localStorage usage
-    const isDark = false; // Default to light mode
+    const isDark = false;
     setDarkMode(isDark);
     document.documentElement.classList.toggle('dark', isDark);
+    
+    // Fetch data from APIs
+    fetchCategories();
+    fetchLatestProducts();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/categories`
+      );
+      const data = await response.json();
+      if (data.success) {
+        setCategories(data.categories);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      // Fallback data if API fails
+      setCategories([
+        { _id: '1', name: 'Fish', icon: '🐟', productCount: 25 },
+        { _id: '2', name: 'Meat', icon: '🥩', productCount: 30 },
+        { _id: '3', name: 'Vegetables', icon: '🥕', productCount: 50 },
+        { _id: '4', name: 'Milk and Egg', icon: '🥛', productCount: 15 },
+        { _id: '5', name: 'Fruits', icon: '🍎', productCount: 40 },
+        { _id: '6', name: 'Cooking Essentials', icon: '🧄', productCount: 35 }
+      ]);
+    }
+  };
+
+  const fetchLatestProducts = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/products`
+      );
+      const data = await response.json();
+      if (data.success) {
+        setLatestProducts(data.products);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      // Fallback data if API fails
+      setLatestProducts([
+        { _id: '1', name: 'Frozen Shrimp 300g', price: 200, originalPrice: null, image: '/images/products/shrimp.jpg', rating: 4.5, reviews: 2, inStock: true, discount: null },
+        { _id: '2', name: 'Frozen Shrimp 2kg', price: 304, originalPrice: 400, image: '/images/products/shrimp-2kg.jpg', rating: 4.0, reviews: 1, inStock: true, discount: 24 },
+        { _id: '3', name: 'Frozen Spinach 500g', price: 291, originalPrice: 300, image: '/images/products/spinach.jpg', rating: 4.5, reviews: 2, inStock: true, discount: 3 },
+        { _id: '4', name: 'Mangosteen Organic 500g', price: 25, originalPrice: null, image: '/images/products/mangosteen.jpg', rating: 5.0, reviews: 1, inStock: true, discount: null },
+        { _id: '5', name: 'Chicken 1 KG', price: 164, originalPrice: 200, image: '/images/products/chicken.jpg', rating: 4.5, reviews: 1, inStock: true, discount: 18 },
+        { _id: '6', name: 'Fresh Tomatoes 1kg', price: 45, originalPrice: 50, image: '/images/products/tomatoes.jpg', rating: 4.8, reviews: 5, inStock: true, discount: 10 }
+      ]);
+      setLoading(false);
+    }
+  };
 
   const toggleTheme = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
-    // Remove localStorage usage
     document.documentElement.classList.toggle('dark', newMode);
   };
 
-  // Sample product data
-  const featuredProducts = [
-    { id: 1, name: 'Frozen Shrimp 300g', price: 200, originalPrice: null, image: '🦐', rating: 4.5, reviews: 2, inStock: true, discount: null },
-    { id: 2, name: 'Frozen Shrimp 2kg', price: 304, originalPrice: 400, image: '🦐', rating: 4.0, reviews: 1, inStock: true, discount: 24 },
-    { id: 3, name: 'Frozen Spinach 500g', price: 291, originalPrice: 300, image: '🥬', rating: 4.5, reviews: 2, inStock: true, discount: 3 },
-    { id: 4, name: 'Mangosteen Organic 500g', price: 25, originalPrice: null, image: '🥭', rating: 5.0, reviews: 1, inStock: true, discount: null },
-    { id: 5, name: 'Chicken 1 KG', price: 164, originalPrice: 200, image: '🐔', rating: 4.5, reviews: 1, inStock: true, discount: 18 },
-    { id: 6, name: 'Fresh Tomatoes 1kg', price: 45, originalPrice: 50, image: '🍅', rating: 4.8, reviews: 5, inStock: true, discount: 10 }
-  ];
+  const scrollToProducts = () => {
+    const productsSection = document.getElementById('latest-products');
+    if (productsSection) {
+      productsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
-  const categories = [
-    { name: 'Fish', icon: '🐟', count: '25+ items' },
-    { name: 'Meat', icon: '🥩', count: '30+ items' },
-    { name: 'Vegetables', icon: '🥕', count: '50+ items' },
-    { name: 'Milk and Egg', icon: '🥛', count: '15+ items' },
-    { name: 'Fruits', icon: '🍎', count: '40+ items' },
-    { name: 'Cooking Essentials', icon: '🧄', count: '35+ items' }
-  ];
+  const navigateToFAQs = () => {
+    window.location.href = '/faqs';
+  };
+
+  const navigateToProducts = (categoryId = null) => {
+    const url = categoryId ? `/products?category=${categoryId}` : '/products';
+    window.location.href = url;
+  };
 
   return (
     <div className={`min-h-screen transition-colors duration-500 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
@@ -60,7 +110,7 @@ export default function Home() {
 
       <Navbar darkMode={darkMode} toggleTheme={toggleTheme} />
 
-      {/* Hero Section */}
+      {/* Hero Section with Image Carousel */}
       <section className={`relative py-16 px-4 overflow-hidden ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 to-green-100'}`}>
         <div className="mx-auto max-w-7xl">
           <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-2">
@@ -101,34 +151,28 @@ export default function Home() {
               </div>
 
               <div className="flex flex-col gap-4 sm:flex-row">
-                <button className="px-8 py-4 font-semibold text-white transition-all transform bg-green-500 shadow-lg hover:bg-green-600 rounded-xl hover:scale-105">
+                <button 
+                  onClick={scrollToProducts}
+                  className="px-8 py-4 font-semibold text-white transition-all transform bg-green-500 shadow-lg hover:bg-green-600 rounded-xl hover:scale-105"
+                >
                   Shop Now <FiArrowRight />
                 </button>
-                <button className={`px-8 py-4 rounded-xl font-semibold border-2 transition-all ${
-                  darkMode 
-                    ? 'border-green-500 text-green-400 hover:bg-green-900' 
-                    : 'border-green-500 text-green-600 hover:bg-green-50'
-                }`}>
+                <button 
+                  onClick={navigateToFAQs}
+                  className={`px-8 py-4 rounded-xl font-semibold border-2 transition-all ${
+                    darkMode 
+                      ? 'border-green-500 text-green-400 hover:bg-green-900' 
+                      : 'border-green-500 text-green-600 hover:bg-green-50'
+                  }`}
+                >
                   Learn More
                 </button>
               </div>
             </div>
             
+            {/* Image Carousel */}
             <div className="relative">
-              <div className={`absolute -top-8 -left-8 w-full h-full rounded-3xl ${
-                darkMode ? 'bg-green-800 opacity-20' : 'bg-green-200'
-              }`}></div>
-              <div className={`relative rounded-3xl overflow-hidden shadow-2xl ${
-                darkMode ? 'border border-gray-700' : 'border border-green-100'
-              }`}>
-                <div className="flex items-center justify-center aspect-square bg-gradient-to-br from-green-400 to-green-600">
-                  <div className="text-center text-white">
-                    <div className="mb-4 text-6xl">🥕🍅🥬</div>
-                    <h3 className="text-2xl font-bold">Farm Fresh</h3>
-                    <p className="opacity-90">Directly from farms</p>
-                  </div>
-                </div>
-              </div>
+              <ImageCarousel darkMode={darkMode} />
             </div>
           </div>
         </div>
@@ -171,7 +215,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Popular Categories */}
+      {/* Popular Categories - From Database */}
       <section className={`py-16 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
@@ -181,16 +225,28 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-6">
-            {categories.map((category, index) => (
-              <div key={index} className={`p-6 rounded-2xl text-center cursor-pointer transition-all hover:scale-105 ${
-                darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:shadow-lg'
-              }`}>
-                <div className="mb-3 text-4xl">{category.icon}</div>
+            {categories.map((category) => (
+              <div 
+                key={category._id} 
+                onClick={() => navigateToProducts(category._id)}
+                className={`p-6 rounded-2xl text-center cursor-pointer transition-all hover:scale-105 ${
+                  darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:shadow-lg'
+                }`}
+              >
+                {category.image ? (
+                  <img 
+                    src={category.image} 
+                    alt={category.name}
+                    className="object-cover w-16 h-16 mx-auto mb-3 rounded-full"
+                  />
+                ) : (
+                  <div className="mb-3 text-4xl">{category.icon || '📦'}</div>
+                )}
                 <h3 className={`font-semibold mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   {category.name}
                 </h3>
                 <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {category.count}
+                  {category.productCount || 0}+ items
                 </p>
               </div>
             ))}
@@ -198,85 +254,113 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Latest Products */}
-      <section className={`py-16 px-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      {/* Latest Products - From Database */}
+      <section id="latest-products" className={`py-16 px-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="mx-auto max-w-7xl">
           <div className="flex items-center justify-between mb-12">
             <h2 className={`text-3xl md:text-4xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               Latest Products
             </h2>
-            <button className="flex items-center font-semibold text-green-500 hover:text-green-600">
+            <button 
+              onClick={() => navigateToProducts()}
+              className="flex items-center font-semibold text-green-500 hover:text-green-600"
+            >
               View All <FiArrowRight />
             </button>
           </div>
           
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {featuredProducts.slice(0, 6).map((product) => (
-              <div key={product.id} className={`rounded-2xl overflow-hidden shadow-lg transition-all hover:scale-105 ${
-                darkMode ? 'bg-gray-700' : 'bg-white'
-              }`}>
-                {product.discount && (
-                  <div className="absolute z-10 px-2 py-1 text-sm font-bold text-white bg-red-500 rounded-lg top-4 left-4">
-                    -{product.discount}%
-                  </div>
-                )}
-                
-                <div className={`aspect-square flex items-center justify-center text-6xl ${
-                  darkMode ? 'bg-gray-600' : 'bg-gray-100'
+          {loading ? (
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, index) => (
+                <div key={index} className={`rounded-2xl overflow-hidden shadow-lg animate-pulse ${
+                  darkMode ? 'bg-gray-700' : 'bg-gray-200'
                 }`}>
-                  {product.image}
+                  <div className="bg-gray-300 aspect-square"></div>
+                  <div className="p-6 space-y-3">
+                    <div className="h-4 bg-gray-300 rounded"></div>
+                    <div className="w-3/4 h-4 bg-gray-300 rounded"></div>
+                    <div className="w-1/2 h-6 bg-gray-300 rounded"></div>
+                  </div>
                 </div>
-                
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`text-sm px-2 py-1 rounded ${
-                      product.inStock 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {product.inStock ? 'In Stock' : 'Out of Stock'}
-                    </span>
-                    <button className="text-gray-400 hover:text-red-500">
-                      <FiHeart />
-                    </button>
-                  </div>
-                  
-                  <h3 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {product.name}
-                  </h3>
-                  
-                  <div className="flex items-center mb-3">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className={i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}>
-                          <FiStar />
-                        </span>
-                      ))}
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {latestProducts.map((product) => (
+                <div key={product._id} className={`rounded-2xl overflow-hidden shadow-lg transition-all hover:scale-105 relative ${
+                  darkMode ? 'bg-gray-700' : 'bg-white'
+                }`}>
+                  {product.discount && (
+                    <div className="absolute z-10 px-2 py-1 text-sm font-bold text-white bg-red-500 rounded-lg top-4 left-4">
+                      -{product.discount}%
                     </div>
-                    <span className={`ml-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      ({product.reviews} reviews)
-                    </span>
+                  )}
+                  
+                  <div className={`aspect-square flex items-center justify-center ${
+                    darkMode ? 'bg-gray-600' : 'bg-gray-100'
+                  }`}>
+                    {product.image ? (
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <div className="text-6xl">📦</div>
+                    )}
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        ৳{product.price}
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-sm px-2 py-1 rounded ${
+                        product.inStock 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {product.inStock ? 'In Stock' : 'Out of Stock'}
                       </span>
-                      {product.originalPrice && (
-                        <span className="text-gray-500 line-through">
-                          ৳{product.originalPrice}
-                        </span>
-                      )}
+                      <button className="text-gray-400 hover:text-red-500">
+                        <FiHeart />
+                      </button>
                     </div>
-                    <button className="px-4 py-2 font-medium text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600">
-                      Add to Cart
-                    </button>
+                    
+                    <h3 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {product.name}
+                    </h3>
+                    
+                    <div className="flex items-center mb-3">
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <span key={i} className={i < Math.floor(product.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}>
+                            <FiStar />
+                          </span>
+                        ))}
+                      </div>
+                      <span className={`ml-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        ({product.reviews || 0} reviews)
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                          ৳{product.price}
+                        </span>
+                        {product.originalPrice && (
+                          <span className="text-gray-500 line-through">
+                            ৳{product.originalPrice}
+                          </span>
+                        )}
+                      </div>
+                      <button className="px-4 py-2 font-medium text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600">
+                        Add to Cart
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -290,11 +374,14 @@ export default function Home() {
             <p className="mb-8 text-xl text-green-100">
               Get up to 30% off on all fresh fruits and vegetables
             </p>
-            <button className={`px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 ${
-              darkMode 
-                ? 'bg-green-500 hover:bg-green-600 text-white' 
-                : 'bg-white text-green-600 hover:bg-green-50'
-            }`}>
+            <button 
+              onClick={() => navigateToProducts()}
+              className={`px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 ${
+                darkMode 
+                  ? 'bg-green-500 hover:bg-green-600 text-white' 
+                  : 'bg-white text-green-600 hover:bg-green-50'
+              }`}
+            >
               Shop Now & Save
             </button>
           </div>
@@ -334,7 +421,10 @@ export default function Home() {
             Join thousands of customers who trust GramBajar for their daily grocery needs.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <button className="px-8 py-4 font-semibold text-white transition-all transform bg-green-500 shadow-lg hover:bg-green-600 rounded-xl hover:scale-105">
+            <button 
+              onClick={() => navigateToProducts()}
+              className="px-8 py-4 font-semibold text-white transition-all transform bg-green-500 shadow-lg hover:bg-green-600 rounded-xl hover:scale-105"
+            >
               Start Shopping Now
             </button>
             <button className={`px-8 py-4 rounded-xl font-semibold border-2 transition-all ${

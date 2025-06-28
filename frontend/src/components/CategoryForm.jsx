@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { FiX, FiUpload, FiTrash2, FiLoader } from 'react-icons/fi';
-import { toast } from 'react-hot-toast';
 
 const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated, onCategoryDeleted, darkMode }) => {
   const [name, setName] = useState(category?.name || '');
@@ -31,7 +30,6 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
       setNewImage(file);
       setImage(URL.createObjectURL(file));
       
-      // Clear image error when new image is selected
       if (errors.image) {
         setErrors(prev => ({ ...prev, image: '' }));
       }
@@ -52,7 +50,6 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
       const token = user?.token;
       
       if (!token) {
-        toast.error('Session expired, please login again');
         return;
       }
 
@@ -73,9 +70,7 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
 
       const response = await fetch(url, {
         method,
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData
       });
 
@@ -87,22 +82,13 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
       const data = await response.json();
       if (category) {
         onCategoryUpdated(data.category);
-        toast.success('Category updated successfully');
       } else {
         onCategoryCreated(data.category);
-        toast.success('Category created successfully');
       }
       
-      // Close form after successful operation
       onClose();
     } catch (error) {
       console.error('Save category error:', error);
-      toast.error(
-        <div>
-          <p className="font-semibold">Action Failed</p>
-          <p className="text-sm">{error.message || 'An error occurred'}</p>
-        </div>
-      );
     } finally {
       setIsSubmitting(false);
     }
@@ -115,18 +101,12 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
       const token = user?.token;
       
       if (!token) {
-        toast.error('Session expired, please login again');
         return;
       }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/products/categories/${category._id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+        { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (!response.ok) {
@@ -135,16 +115,9 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
       }
 
       onCategoryDeleted(category._id);
-      toast.success('Category deleted successfully');
       onClose();
     } catch (error) {
       console.error('Delete category error:', error);
-      toast.error(
-        <div>
-          <p className="font-semibold">Action Failed</p>
-          <p className="text-sm">{error.message || 'An error occurred'}</p>
-        </div>
-      );
     } finally {
       setIsSubmitting(false);
       setShowDeleteConfirm(false);
@@ -168,7 +141,6 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                // Clear error when typing
                 if (errors.name) {
                   setErrors(prev => ({ ...prev, name: '' }));
                 }
@@ -180,9 +152,7 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
               }`}
               disabled={isSubmitting}
             />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-            )}
+            {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
           </div>
           
           <div className="mb-4">
@@ -213,7 +183,6 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
                   onClick={() => {
                     setImage('');
                     setNewImage(null);
-                    // Set error if image is removed
                     setErrors(prev => ({ ...prev, image: 'Category image is required' }));
                   }}
                   className="p-2 ml-3 text-red-600 rounded-full hover:bg-red-100 dark:hover:bg-red-900"
@@ -223,9 +192,7 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
               )}
             </div>
             
-            {errors.image && (
-              <p className="mt-1 text-sm text-red-500">{errors.image}</p>
-            )}
+            {errors.image && <p className="mt-1 text-sm text-red-500">{errors.image}</p>}
             
             {image && (
               <div className="mt-4">
@@ -286,7 +253,6 @@ const CategoryForm = ({ category, onClose, onCategoryCreated, onCategoryUpdated,
         </form>
       </div>
       
-      {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className={`fixed inset-0 flex items-center justify-center p-4 z-10 ${darkMode ? 'bg-black bg-opacity-80' : 'bg-white bg-opacity-90'}`}>
           <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>

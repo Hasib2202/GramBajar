@@ -7,7 +7,6 @@ import {
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/context/ThemeContext';
 import ProductModal from '@/components/ProductModal';
-import CategoryModal from '@/components/CategoryModal';
 import CategoryManager from './CategoryManager';
 
 const AdminProducts = () => {

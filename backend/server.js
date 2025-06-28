@@ -6,12 +6,13 @@ import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import urlRoutes from './routes/urlRoutes.js';
-import productRoutes from './routes/productRoutes.js';
+import productRoutes from './routes/adminProductRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import passport from 'passport';
 import configurePassport from './config/passport.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import adminRoutes from './routes/adminRoutes.js';
+import publicRoutes from './routes/publicRoutes.js'; // Add this
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -67,6 +68,7 @@ app.use('/api/admin', adminRoutes);
 
 app.use('/api/admin/products', productRoutes);
 app.use('/api/admin/orders', orderRoutes);
+app.use('/api/public', publicRoutes); // Add public routes
 
 // Error handling middleware
 app.use(notFound);
