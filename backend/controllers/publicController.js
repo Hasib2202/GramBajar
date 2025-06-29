@@ -1,48 +1,7 @@
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 
-// Get all products (public)
-// export const getPublicProducts = async (req, res) => {
-//   try {
-//     const { page = 1, limit = 6, search = '', category } = req.query;
-    
-//     let query = { isActive: true }; // Only show active products
-    
-//     if (search) {
-//       query.$or = [
-//         { title: { $regex: search, $options: 'i' } },
-//         { description: { $regex: search, $options: 'i' } }
-//       ];
-//     }
-    
-//     if (category) {
-//       query.category = category;
-//     }
-    
-//     const products = await Product.find(query)
-//       .populate('category', 'name image')
-//       .skip((page - 1) * limit)
-//       .limit(parseInt(limit))
-//       .sort({ createdAt: -1 });
-    
-//     const total = await Product.countDocuments(query);
-    
-//     res.json({
-//       success: true,
-//       products,
-//       total,
-//       page: parseInt(page),
-//       pages: Math.ceil(total / limit)
-//     });
-//   } catch (error) {
-//     console.error('Get public products error:', error);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to get products',
-//       error: error.message
-//     });
-//   }
-// };
+
 
 // Get single product (public)
 export const getPublicProductById = async (req, res) => {
@@ -72,10 +31,45 @@ export const getPublicProductById = async (req, res) => {
   }
 };
 
-// Get all categories (public)
+// Get all categories (public) with product counts
 export const getPublicCategories = async (req, res) => {
   try {
-    const categories = await Category.find().sort({ name: 1 });
+    const categories = await Category.aggregate([
+      {
+        $lookup: {
+          from: 'products', // Collection name for products
+          let: { categoryId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$category', '$$categoryId'] },
+                    { $eq: ['$isActive', true] }
+                  ]
+                }
+              }
+            },
+            { $count: 'productCount' }
+          ],
+          as: 'products'
+        }
+      },
+      {
+        $addFields: {
+          productCount: {
+            $ifNull: [{ $arrayElemAt: ['$products.productCount', 0] }, 0]
+          }
+        }
+      },
+      {
+        $project: {
+          products: 0 // Remove the temporary products array
+        }
+      },
+      { $sort: { name: 1 } }
+    ]);
+
     res.json({
       success: true,
       categories
@@ -89,7 +83,6 @@ export const getPublicCategories = async (req, res) => {
     });
   }
 };
-
 
 // Get all products (public) with enhanced filtering
 export const getPublicProducts = async (req, res) => {
