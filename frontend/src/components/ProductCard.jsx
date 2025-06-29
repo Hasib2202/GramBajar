@@ -210,6 +210,7 @@
 // export default ProductCard;
 
 import { useState } from 'react';
+import { useCart } from '../context/CartContext';
 
 // Icons
 const FiStar = () => <span>⭐</span>;
@@ -239,9 +240,11 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
     setIsWishlisted(!isWishlisted);
   };
 
-  const addToCart = () => {
-    console.log('Adding to cart:', product._id);
-  };
+  // const addToCart = () => {
+  //   console.log('Adding to cart:', product._id);
+  // };
+
+  const { addToCart } = useCart();
 
   const viewProduct = () => {
     window.location.href = `/product/${product._id}`;
@@ -463,7 +466,8 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
 
         {/* Add to Cart Button */}
         <button
-          onClick={addToCart}
+          // onClick={addToCart}
+          onClick={() => addToCart(product)}
           disabled={product.stock <= 0}
           className={`w-full mt-3 py-2 px-4 rounded-lg font-medium transition-colors ${
             product.stock > 0

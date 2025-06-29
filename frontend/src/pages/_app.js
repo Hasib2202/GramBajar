@@ -3,6 +3,7 @@ import '@/styles/globals.css'
 import '../styles/fonts.css';
 import Head from 'next/head';
 import { Toaster } from 'react-hot-toast';
+import { CartProvider } from '../context/CartContext';
 
 export default function App({ Component, pageProps }) {
   return (
@@ -35,10 +36,12 @@ export default function App({ Component, pageProps }) {
         <link
           rel="preload"
           as="image"
-          href="/images/veg.jpg"   
+          href="/images/veg.jpg"
         />
       </Head>
-      <Component {...pageProps} />
+       <CartProvider>
+        <Component {...pageProps} />
+       </CartProvider>
     </ThemeProvider>
   )
 }

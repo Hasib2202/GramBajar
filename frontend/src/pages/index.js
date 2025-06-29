@@ -205,8 +205,8 @@ export default function Home() {
                 <button
                   onClick={navigateToFAQs}
                   className={`px-8 py-4 rounded-xl font-semibold border-2 transition-all ${darkMode
-                      ? 'border-green-500 text-green-400 hover:bg-green-900'
-                      : 'border-green-500 text-green-600 hover:bg-green-50'
+                    ? 'border-green-500 text-green-400 hover:bg-green-900'
+                    : 'border-green-500 text-green-600 hover:bg-green-50'
                     }`}
                 >
                   Learn More
@@ -260,7 +260,9 @@ export default function Home() {
       {/* Popular Categories - From Database */}
       <section id="popular-categories" className={`py-16 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col items-center justify-between gap-4 mb-12 md:flex-row">
+
+          <div className="flex flex-col justify-between gap-4 mb-12 md:flex-row md:items-center">
+            {/* Left: Title + Subtitle */}
             <div>
               <h2 className={`text-3xl md:text-4xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 Popular Categories
@@ -270,67 +272,77 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Categories Pagination Controls */}
-            {categoriesTotalPages > 1 && (
-              <div className={`flex items-center space-x-2 ${darkMode ? 'text-white' : 'text-gray-800'
-                }`}>
-                <button
-                  onClick={() => paginateCategories(categoriesCurrentPage - 1)}
-                  disabled={categoriesCurrentPage === 1}
-                  className={`p-2 rounded-full ${categoriesCurrentPage === 1
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                >
-                  <FiArrowLeft size={20} />
-                </button>
+            {/* Right: View All + Pagination */}
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigateToProducts()}
+                className="items-center hidden font-semibold text-green-500 md:inline-flex hover:text-green-600"
+              >
+                View All <FiArrowRight className="ml-1" />
+              </button>
 
-                <div className="flex space-x-1">
-                  {Array.from({ length: Math.min(5, categoriesTotalPages) }, (_, i) => {
-                    let pageNum;
-                    if (categoriesTotalPages <= 5) {
-                      pageNum = i + 1;
-                    } else {
-                      // Show dynamic page numbers for many pages
-                      const startPage = Math.max(1, Math.min(categoriesCurrentPage - 2, categoriesTotalPages - 4));
-                      pageNum = startPage + i;
-                    }
-                    return pageNum;
-                  }).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => paginateCategories(page)}
-                      className={`w-8 h-8 rounded-full text-sm ${page === categoriesCurrentPage
-                          ? 'bg-green-500 text-white'
-                          : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                        }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
+              {/* Categories Pagination Controls */}
+              {categoriesTotalPages > 1 && (
+                <div className={`flex items-center space-x-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  <button
+                    onClick={() => paginateCategories(categoriesCurrentPage - 1)}
+                    disabled={categoriesCurrentPage === 1}
+                    className={`p-2 rounded-full ${categoriesCurrentPage === 1
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <FiArrowLeft size={20} />
+                  </button>
 
-                  {categoriesTotalPages > 5 && categoriesCurrentPage < categoriesTotalPages - 2 && (
-                    <span className="mx-1">...</span>
-                  )}
+                  <div className="flex space-x-1">
+                    {Array.from({ length: Math.min(5, categoriesTotalPages) }, (_, i) => {
+                      let pageNum;
+                      if (categoriesTotalPages <= 5) {
+                        pageNum = i + 1;
+                      } else {
+                        // Show dynamic page numbers for many pages
+                        const startPage = Math.max(1, Math.min(categoriesCurrentPage - 2, categoriesTotalPages - 4));
+                        pageNum = startPage + i;
+                      }
+                      return pageNum;
+                    }).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => paginateCategories(page)}
+                        className={`w-8 h-8 rounded-full text-sm ${page === categoriesCurrentPage
+                            ? 'bg-green-500 text-white'
+                            : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    {categoriesTotalPages > 5 && categoriesCurrentPage < categoriesTotalPages - 2 && (
+                      <span className="mx-1">...</span>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => paginateCategories(categoriesCurrentPage + 1)}
+                    disabled={categoriesCurrentPage === categoriesTotalPages}
+                    className={`p-2 rounded-full ${categoriesCurrentPage === categoriesTotalPages
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <FiArrowRight size={20} />
+                  </button>
+
+                  <span className="text-sm">
+                    Page {categoriesCurrentPage} of {categoriesTotalPages}
+                  </span>
                 </div>
-
-                <button
-                  onClick={() => paginateCategories(categoriesCurrentPage + 1)}
-                  disabled={categoriesCurrentPage === categoriesTotalPages}
-                  className={`p-2 rounded-full ${categoriesCurrentPage === categoriesTotalPages
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                >
-                  <FiArrowRight size={20} />
-                </button>
-
-                <span className="text-sm">
-                  Page {categoriesCurrentPage} of {categoriesTotalPages}
-                </span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
+
 
           <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-6">
             {currentCategories.map((category) => (
@@ -360,7 +372,7 @@ export default function Home() {
           </div>
 
           {/* View All Categories Button */}
-          <div className="flex justify-center mt-12">
+          {/* <div className="flex justify-center mt-12">
             <button
               onClick={() => navigateToProducts()}
               className={`px-8 py-3 font-semibold rounded-lg ${darkMode
@@ -370,7 +382,7 @@ export default function Home() {
             >
               View All Categories
             </button>
-          </div>
+          </div> */}
         </div>
       </section>
 
@@ -423,8 +435,8 @@ export default function Home() {
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                     className={`p-2 rounded-full ${currentPage === 1
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-gray-200 dark:hover:bg-gray-700'
                       }`}
                   >
                     <FiArrowLeft size={24} />
@@ -446,8 +458,8 @@ export default function Home() {
                         key={page}
                         onClick={() => handlePageChange(page)}
                         className={`w-10 h-10 rounded-full ${page === currentPage
-                            ? 'bg-green-500 text-white'
-                            : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                          ? 'bg-green-500 text-white'
+                          : 'hover:bg-gray-200 dark:hover:bg-gray-700'
                           }`}
                       >
                         {page}
@@ -463,8 +475,8 @@ export default function Home() {
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     className={`p-2 rounded-full ${currentPage === totalPages
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-gray-200 dark:hover:bg-gray-700'
                       }`}
                   >
                     <FiArrowRight size={24} />
@@ -493,8 +505,8 @@ export default function Home() {
             <button
               onClick={() => navigateToProducts()}
               className={`px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 ${darkMode
-                  ? 'bg-green-500 hover:bg-green-600 text-white'
-                  : 'bg-white text-green-600 hover:bg-green-50'
+                ? 'bg-green-500 hover:bg-green-600 text-white'
+                : 'bg-white text-green-600 hover:bg-green-50'
                 }`}
             >
               Shop Now & Save
@@ -543,8 +555,8 @@ export default function Home() {
               Start Shopping Now
             </button>
             <button className={`px-8 py-4 rounded-xl font-semibold border-2 transition-all ${darkMode
-                ? 'border-green-500 text-green-400 hover:bg-green-900'
-                : 'border-green-500 text-green-600 hover:bg-green-50'
+              ? 'border-green-500 text-green-400 hover:bg-green-900'
+              : 'border-green-500 text-green-600 hover:bg-green-50'
               }`}>
               Download App
             </button>

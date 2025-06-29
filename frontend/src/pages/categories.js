@@ -82,12 +82,17 @@ export default function CategoriesPage() {
         }
     }, [searchTerm, categories]);
 
-    const navigateToProducts = (categoryId) => {
-        // Fixed navigation to ensure products page loads correctly
-        router.push({
-            pathname: '/products',
-            query: { category: categoryId }
-        });
+    // const navigateToProducts = (categoryId) => {
+    //     // Fixed navigation to ensure products page loads correctly
+    //     router.push({
+    //         pathname: '/products',
+    //         query: { category: categoryId }
+    //     });
+    // };
+
+    const navigateToProducts = (categoryId = null) => {
+        const url = categoryId ? `/products?category=${categoryId}` : '/products';
+        window.location.href = url;
     };
 
     // Calculate paginated categories
@@ -145,8 +150,8 @@ export default function CategoriesPage() {
 
             {/* Hero Section */}
             <section className={`py-16 px-4 text-white ${darkMode
-                    ? 'bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-900'
-                    : 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                ? 'bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-900'
+                : 'bg-gradient-to-r from-emerald-500 to-teal-500'
                 }`}>
                 <div className="mx-auto text-center max-w-7xl">
                     <h1 className="mb-6 text-3xl font-bold md:text-4xl">Browse Our Categories</h1>
@@ -209,8 +214,8 @@ export default function CategoriesPage() {
                             <button
                                 onClick={() => setSearchTerm('')}
                                 className={`px-6 py-3 rounded-lg font-bold ${darkMode
-                                        ? 'bg-emerald-600 hover:bg-emerald-500'
-                                        : 'bg-emerald-500 hover:bg-emerald-400 text-white'
+                                    ? 'bg-emerald-600 hover:bg-emerald-500'
+                                    : 'bg-emerald-500 hover:bg-emerald-400 text-white'
                                     }`}
                             >
                                 Clear Search
@@ -299,8 +304,8 @@ export default function CategoriesPage() {
                                             onClick={() => handlePageChange(currentPage - 1)}
                                             disabled={currentPage === 1}
                                             className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode
-                                                    ? 'bg-slate-700 hover:bg-slate-600 disabled:opacity-50'
-                                                    : 'bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50'
+                                                ? 'bg-slate-700 hover:bg-slate-600 disabled:opacity-50'
+                                                : 'bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50'
                                                 }`}
                                         >
                                             &lt;
@@ -311,12 +316,12 @@ export default function CategoriesPage() {
                                                 key={index}
                                                 onClick={() => handlePageChange(index + 1)}
                                                 className={`w-10 h-10 rounded-lg ${currentPage === index + 1
-                                                        ? darkMode
-                                                            ? 'bg-emerald-600 text-white'
-                                                            : 'bg-emerald-500 text-white'
-                                                        : darkMode
-                                                            ? 'bg-slate-700 hover:bg-slate-600'
-                                                            : 'bg-emerald-100 hover:bg-emerald-200'
+                                                    ? darkMode
+                                                        ? 'bg-emerald-600 text-white'
+                                                        : 'bg-emerald-500 text-white'
+                                                    : darkMode
+                                                        ? 'bg-slate-700 hover:bg-slate-600'
+                                                        : 'bg-emerald-100 hover:bg-emerald-200'
                                                     }`}
                                             >
                                                 {index + 1}
@@ -327,8 +332,8 @@ export default function CategoriesPage() {
                                             onClick={() => handlePageChange(currentPage + 1)}
                                             disabled={currentPage === totalPages}
                                             className={`w-10 h-10 rounded-lg flex items-center justify-center ${darkMode
-                                                    ? 'bg-slate-700 hover:bg-slate-600 disabled:opacity-50'
-                                                    : 'bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50'
+                                                ? 'bg-slate-700 hover:bg-slate-600 disabled:opacity-50'
+                                                : 'bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50'
                                                 }`}
                                         >
                                             &gt;
@@ -343,8 +348,8 @@ export default function CategoriesPage() {
 
             {/* CTA Section */}
             <section className={`py-16 px-4 text-white ${darkMode
-                    ? 'bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-900'
-                    : 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                ? 'bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-900'
+                : 'bg-gradient-to-r from-emerald-500 to-teal-500'
                 }`}>
                 <div className="relative z-10 max-w-4xl mx-auto text-center">
                     <h2 className="mb-6 text-3xl font-bold">Can't find what you're looking for?</h2>
@@ -352,8 +357,8 @@ export default function CategoriesPage() {
                         Contact our support team for assistance with special orders or product requests.
                     </p>
                     <button className={`px-8 py-4 font-bold transition-all rounded-lg shadow-lg ${darkMode
-                            ? 'bg-gray-900 text-white hover:bg-gray-800 border border-emerald-700'
-                            : 'bg-white text-emerald-600 hover:bg-emerald-50'
+                        ? 'bg-gray-900 text-white hover:bg-gray-800 border border-emerald-700'
+                        : 'bg-white text-emerald-600 hover:bg-emerald-50'
                         }`}>
                         Contact Support
                     </button>
