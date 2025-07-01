@@ -19,7 +19,7 @@ export default function Navbar({ darkMode, toggleTheme }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { totalItems } = useCart();
+  const { distinctItemCount, totalQuantity } = useCart();
 
   // Check if user is logged in
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function Navbar({ darkMode, toggleTheme }) {
           {/* Logo */}
           <div className="flex items-center">
             <div className="mr-0 text-3xl text-green-500"><FiLeaf /></div>
-            <h1 className={`text-2xl font-bold mr-2   ${darkMode ? 'text-green-400' : 'text-green-700'}`}>
+            <h1 className={`text-2xl font-bold mr-2 ${darkMode ? 'text-green-400' : 'text-green-700'}`}>
               GramBajar
             </h1>
           </div>
@@ -88,9 +88,11 @@ export default function Navbar({ darkMode, toggleTheme }) {
               }`}
             >
               <FiShoppingCart />
-              <span className="absolute flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full -top-1 -right-1">
-                {totalItems}
-              </span>
+              {distinctItemCount > 0 && (
+                <span className="absolute flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full -top-1 -right-1">
+                  {distinctItemCount}
+                </span>
+              )}
             </button>
 
             {/* User Account */}

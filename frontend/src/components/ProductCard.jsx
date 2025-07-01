@@ -221,6 +221,7 @@ const FiEye = () => <span>👁️</span>;
 export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
   const [imageError, setImageError] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const { addToCart } = useCart();
 
   // Get the first image URL
   const imageUrl = product.images && product.images.length > 0 
@@ -240,11 +241,16 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
     setIsWishlisted(!isWishlisted);
   };
 
-  // const addToCart = () => {
-  //   console.log('Adding to cart:', product._id);
-  // };
-
-  const { addToCart } = useCart();
+  const handleAddToCart = () => {
+    addToCart({
+      id: product._id,
+      name: product.title,
+      price: product.price,
+      discount: product.discount || 0,
+      discountedPrice: discountPrice,
+      images: product.images || []
+    });
+  };
 
   const viewProduct = () => {
     window.location.href = `/product/${product._id}`;
@@ -340,7 +346,7 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
                 <FiEye />
               </button>
               <button
-                onClick={addToCart}
+                onClick={handleAddToCart}
                 disabled={product.stock <= 0}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   product.stock > 0
@@ -405,7 +411,7 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
             <FiEye />
           </button>
           <button
-            onClick={addToCart}
+            onClick={handleAddToCart}
             disabled={product.stock <= 0}
             className={`p-2 rounded-full backdrop-blur-sm ${
               product.stock > 0
@@ -466,8 +472,7 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
 
         {/* Add to Cart Button */}
         <button
-          // onClick={addToCart}
-          onClick={() => addToCart(product)}
+          onClick={handleAddToCart}
           disabled={product.stock <= 0}
           className={`w-full mt-3 py-2 px-4 rounded-lg font-medium transition-colors ${
             product.stock > 0

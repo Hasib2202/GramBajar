@@ -1,28 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, Mail, Lock, Chrome, Sun, Moon } from 'lucide-react';
+import { useRouter } from 'next/router';
+import { Eye, EyeOff, Mail, Lock, Chrome } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const LoginForm = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  // Theme toggle
-  const [darkMode, setDarkMode] = useState(false);
-
-  useEffect(() => {
-    const isDark = false;
-    setDarkMode(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
-
-  const toggleTheme = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    document.documentElement.classList.toggle('dark', newMode);
-  };
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -32,7 +19,9 @@ const LoginForm = () => {
 
     if (verification === 'success') {
       setSuccess('Email verified successfully! You can now login.');
-      window.history.replaceState({}, document.title, window.location.pathname);
+      // Clean URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
     }
     if (loginSuccess === 'success') {
       setSuccess('Login successful!');
@@ -68,25 +57,45 @@ const LoginForm = () => {
       if (response.ok) {
         setSuccess('Login successful!');
 
-        // Store user data properly
+        // Store user data
         const userData = {
           id: data.user.id,
           name: data.user.name,
           email: data.user.email,
-          role: data.user.role, // Make sure role is included
+          role: data.user.role,
           profilePicture: data.user.profilePicture,
           token: data.token
         };
         localStorage.setItem('user', JSON.stringify(userData));
 
-        // Redirect based on role
-        setTimeout(() => {
-          if (data.user.role === 'Admin') {
-            window.location.href = '/admin/dashboard';
-          } else {
-            window.location.href = '/';
+        // Check for redirect data
+        const redirectData = localStorage.getItem('redirectAfterLogin');
+        
+        if (redirectData) {
+          const { path, cartItems } = JSON.parse(redirectData);
+          
+          // Restore cart if exists
+          if (cartItems) {
+            localStorage.setItem('cart', JSON.stringify(cartItems));
           }
-        }, 1000);
+          
+          // Remove redirect data
+          localStorage.removeItem('redirectAfterLogin');
+          
+          // Redirect to intended page
+          setTimeout(() => {
+            router.push(path);
+          }, 1000);
+        } else {
+          // Redirect based on role
+          setTimeout(() => {
+            if (data.user.role === 'Admin') {
+              router.push('/admin/dashboard');
+            } else {
+              router.push('/');
+            }
+          }, 1000);
+        }
       } else {
         setError(data.message || 'Login failed');
       }
@@ -98,29 +107,17 @@ const LoginForm = () => {
   };
 
   const handleGoogleLogin = () => {
-    // Clear existing Google session
-    // window.open('https://accounts.google.com/logout', '_blank');
-
     // Add random state parameter
     const state = Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem('oauth_state', state);
 
-    // Redirect to Google auth with fresh prompt
-    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google?prompt=select_account`;
+    // Redirect to Google auth
+    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google?prompt=select_account&state=${state}`;
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-black">
       <div className="relative w-full max-w-md">
-        {/* Theme Toggle */}
-        {/* <button
-          onClick={toggleTheme}
-          className="absolute p-2 text-gray-600 rounded-full top-4 right-4 dark:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-          aria-label="Toggle theme"
-        >
-          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button> */}
-
         <div className="p-8 bg-white border border-gray-100 shadow-xl rounded-2xl dark:bg-gray-900 dark:border-gray-700">
           {/* Header */}
           <div className="mb-8 text-center">
