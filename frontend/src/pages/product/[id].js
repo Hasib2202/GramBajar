@@ -4,6 +4,8 @@ import Head from 'next/head';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import ImageGallery from '../../components/ImageGallery';
+import { useCart } from '@/src/context/CartContext';
+import { toast } from 'react-toastify';
 
 // Icons
 const FiShoppingCart = () => <span>🛒</span>;
@@ -20,6 +22,7 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const isDark = false;
@@ -45,7 +48,8 @@ export default function ProductDetailPage() {
       const data = await response.json();
       if (data.success) {
         setProduct(data.product);
-        fetchRelatedProducts(data.product.category);
+        // FIX 1: Pass category ID instead of full object
+        fetchRelatedProducts(data.product.category?._id);
       } else {
         setError(true);
       }
@@ -57,6 +61,9 @@ export default function ProductDetailPage() {
   };
 
   const fetchRelatedProducts = async (categoryId) => {
+    // FIX 1: Only fetch if categoryId exists
+    if (!categoryId) return;
+    
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/products?category=${categoryId}&limit=4`
@@ -81,9 +88,21 @@ export default function ProductDetailPage() {
     setQuantity(newValue);
   };
 
-  const addToCart = () => {
-    console.log(`Added ${quantity} of ${product.title} to cart`);
+  const handleAddToCart = () => {
+    // FIX 2: Add quantity to cart item
+    addToCart({
+      id: product._id,
+      name: product.title,
+      price: product.price,
+      discount: product.discount || 0,
+      discountedPrice: discountPrice,
+      images: product.images || [],
+      quantity: quantity
+    });
+    
+    toast.success(`${quantity} ${product.title} added to cart!`);
   };
+
 
   if (loading) {
     return (
@@ -311,12 +330,12 @@ export default function ProductDetailPage() {
             {/* Action Buttons */}
             <div className="flex space-x-3">
               <button
-                onClick={addToCart}
+                onClick={handleAddToCart}
                 disabled={product.stock <= 0}
-                className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   product.stock > 0
-                    ? 'text-white bg-gradient-to-r from-green-500 to-emerald-500'
-                    : 'bg-slate-300 text-slate-500'
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
                 <span className="mr-2"><FiShoppingCart /></span>
