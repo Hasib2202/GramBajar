@@ -1,7 +1,7 @@
 // components/UserDropdown.js
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { FiSettings, FiLogOut, FiUser } from 'react-icons/fi';
+import { FiSettings, FiLogOut, FiUser, FiShoppingCart, FiEdit, FiLock } from 'react-icons/fi';
 import { useRouter } from 'next/router';
 
 const UserDropdown = ({ darkMode }) => {
@@ -213,6 +213,45 @@ const UserDropdown = ({ darkMode }) => {
               >
                 <FiSettings className="w-4 h-4 mr-3" />
                 Profile Settings
+              </Link>
+
+              <Link
+                href="/profile"
+                className={`flex items-center px-4 py-2 text-sm transition-colors ${
+                  darkMode 
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+                onClick={() => setIsOpen(false)}
+              >
+                <FiShoppingCart className="w-4 h-4 mr-3" />
+                My Orders
+              </Link>
+
+              <Link
+                href="/profile"
+                className={`flex items-center px-4 py-2 text-sm transition-colors ${
+                  darkMode 
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+                onClick={() => setIsOpen(false)}
+              >
+                <FiLock className="w-4 h-4 mr-2" />
+                Change Password
+              </Link>
+
+              <Link
+                href="/profile"
+                className={`flex items-center px-4 py-2 text-sm transition-colors ${
+                  darkMode 
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+                onClick={() => setIsOpen(false)}
+              >
+                <FiEdit className="w-4 h-4 mr-2" />
+                Edit Profile
               </Link>
               
               <button

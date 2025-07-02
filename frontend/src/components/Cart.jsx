@@ -21,7 +21,7 @@ export default function Cart({ isOpen, setIsOpen }) {
     clearCart 
   } = useCart();
   
-  const { darkMode, toggleTheme } = useTheme(); // Get both darkMode and toggleTheme
+  const { darkMode, toggleTheme } = useTheme();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleCheckout = async () => {
@@ -31,6 +31,19 @@ export default function Cart({ isOpen, setIsOpen }) {
       const user = JSON.parse(localStorage.getItem('user'));
       
       if (!user || !user.token) {
+        // Show toast notification
+        toast.info('Please Sign In to proceed to Checkout', {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        
+        // Delay redirect to allow toast to show
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
         localStorage.setItem('redirectAfterLogin', JSON.stringify({
           path: '/checkout',
           cartItems
@@ -72,7 +85,6 @@ export default function Cart({ isOpen, setIsOpen }) {
           }`}>
             <h2 className="text-2xl font-bold">Shopping Cart</h2>
             <div className="flex items-center space-x-3">
-              {/* Theme Toggle Button */}
               <button 
                 onClick={toggleTheme}
                 className={`p-2 rounded-full ${
@@ -83,7 +95,6 @@ export default function Cart({ isOpen, setIsOpen }) {
                 {darkMode ? <FiSun /> : <FiMoon />}
               </button>
               
-              {/* Close Button */}
               <button 
                 onClick={() => setIsOpen(false)}
                 className={`p-2 rounded-full ${
@@ -131,7 +142,6 @@ export default function Cart({ isOpen, setIsOpen }) {
                       }`}
                     >
                       <div className="flex items-start">
-                        {/* Product Image */}
                         {item.images && item.images.length > 0 && (
                           <div className="mr-4">
                             <img 
