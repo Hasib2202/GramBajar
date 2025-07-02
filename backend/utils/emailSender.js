@@ -143,7 +143,6 @@ export const sendPasswordResetEmail = async (email, token) => {
   }
 };
 
-
 // utils/emailTemplates.js
 export const passwordResetTemplate = (resetToken) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
