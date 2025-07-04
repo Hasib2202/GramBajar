@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { verifyAuth } from '../utils/auth';
+import ErrorBoundary from './ErrorBoundary';
+
 
 const ProtectedRoute = ({ children }) => {
   const router = useRouter();
@@ -35,12 +37,14 @@ const ProtectedRoute = ({ children }) => {
 
   if (isLoading) {
     return (
+      <ErrorBoundary>
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="w-12 h-12 mx-auto border-t-2 border-b-2 border-blue-500 rounded-full animate-spin"></div>
           <p className="mt-4 text-lg">Verifying authentication...</p>
         </div>
       </div>
+       </ErrorBoundary>
     );
   }
 

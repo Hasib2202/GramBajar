@@ -290,7 +290,7 @@ const AdminOrders = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                              ${order.totalAmount.toFixed(2)}
+                              ৳{order.totalAmount.toFixed(2)}
                             </div>
                             <div className="text-sm text-gray-500">
                               {order.products.length} items

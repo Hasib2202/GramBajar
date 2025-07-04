@@ -1,8 +1,7 @@
-// src/pages/orderConfirmation/[orderId].js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { getOrderDetails } from '../../lib/api/orderApi';
+import Image from 'next/image';
 
 const OrderConfirmation = () => {
   const router = useRouter();
@@ -13,47 +12,72 @@ const OrderConfirmation = () => {
 
   useEffect(() => {
     if (!orderId) return;
-    
+
     const fetchOrder = async () => {
       try {
-        const orderData = await getOrderDetails(orderId);
-        setOrder(orderData);
+        setIsLoading(true);
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (!user || !user.token) {
+          throw new Error('Please login to view this order');
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/${orderId}`,
+          { headers: { 'Authorization': `Bearer ${user.token}` } }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to load order');
+        }
+
+        const data = await response.json();
+        setOrder(data.order);
+
       } catch (err) {
-        setError('Failed to load order details');
-        console.error(err);
+        setError(err.message);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchOrder();
   }, [orderId]);
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="inline-block w-12 h-12 border-4 rounded-full spinner-border animate-spin" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="mt-4 text-lg">Loading order details...</p>
+          <div className="w-12 h-12 mx-auto border-t-2 border-blue-500 rounded-full animate-spin"></div>
+          <p className="mt-4">Loading your order details...</p>
         </div>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="max-w-md px-4 py-3 text-red-700 bg-red-100 border border-red-400 rounded">
-          <p className="font-bold">Error</p>
-          <p>{error}</p>
-          <button 
-            onClick={() => router.push('/')}
-            className="px-4 py-2 mt-4 text-white bg-red-600 rounded hover:bg-red-700"
-          >
-            Return Home
-          </button>
+        <div className="max-w-md p-6 text-center bg-white rounded-lg shadow">
+          <h2 className="mb-4 text-xl font-bold text-red-600">Error</h2>
+          <p className="mb-4">{error}</p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => router.push('/orders')}
+              className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+            >
+              My Orders
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+            >
+              Home
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -61,64 +85,70 @@ const OrderConfirmation = () => {
 
   return (
     <div className="max-w-4xl min-h-screen p-4 mx-auto">
-      <div className="overflow-hidden bg-white rounded-lg shadow-lg">
-        <div className="p-6 text-center text-white bg-green-600">
-          <h1 className="text-2xl font-bold">Order Confirmed!</h1>
-          <p className="mt-2">Thank you for your order #{order._id}</p>
-        </div>
-        
-        <div className="p-6">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            <div>
-              <h2 className="pb-2 mb-4 text-xl font-semibold border-b">Order Summary</h2>
-              <div className="space-y-4">
-                {order.products.map((item, index) => (
-                  <div key={index} className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium">{item.productId?.title || 'Product'}</p>
-                      <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+      <div className="p-6 mb-6 text-center text-white bg-green-600 rounded-lg">
+        <h1 className="text-2xl font-bold">Order Confirmed!</h1>
+        <p className="mt-2">Your order ID: {order._id.slice(-8).toUpperCase()}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2">
+        {/* Order Summary */}
+        <div className="p-6 bg-white rounded-lg shadow">
+          <h2 className="mb-4 text-xl font-semibold">Order Summary</h2>
+          <div className="space-y-4">
+            {order.products.map((item, index) => (
+              <div key={index} className="flex items-start pb-4 border-b">
+                {item.productId?.images?.[0] && (
+                  <div className="mr-4">
+                    <Image
+                      src={item.productId.images[0]}
+                      alt={item.productId.title}
+                      width={80}
+                      height={80}
+                      className="object-cover rounded"
+                    />
                   </div>
-                ))}
+                )}
+                <div className="flex-1">
+                  <p className="font-medium">{item.productId?.title || 'Product'}</p>
+                  <p className="text-gray-600">Quantity: {item.quantity}</p>
+                  <p className="text-gray-600">Price: ৳{item.price.toFixed(2)}</p>
+                </div>
+                <div className="font-medium">৳{(item.price * item.quantity).toFixed(2)}</div>
               </div>
-              <div className="flex justify-between pt-4 mt-6 text-lg font-bold border-t">
-                <span>Total</span>
-                <span>${order.totalAmount.toFixed(2)}</span>
-              </div>
-            </div>
-            
-            <div>
-              <h2 className="pb-2 mb-4 text-xl font-semibold border-b">Delivery Information</h2>
-              <div className="space-y-2">
-                <p><strong>Name:</strong> {order.consumerId?.name || 'N/A'}</p>
-                <p><strong>Email:</strong> {order.consumerId?.email || 'N/A'}</p>
-                <p><strong>Contact:</strong> {order.contact}</p>
-                <p><strong>Address:</strong> {order.address}</p>
-                <p className="mt-4">
-                  <strong>Status:</strong> 
-                  <span className={`ml-2 px-2 py-1 rounded ${
-                    order.status === 'Paid' ? 'bg-green-200 text-green-800' : 
-                    order.status === 'Pending' ? 'bg-yellow-200 text-yellow-800' : 
-                    'bg-gray-200 text-gray-800'
-                  }`}>
-                    {order.status}
-                  </span>
-                </p>
-              </div>
-              <p className="mt-6 text-gray-600">
-                We've sent a confirmation email with your order details.
-                You can track your order status in your account.
-              </p>
-            </div>
+            ))}
           </div>
-          
-          <div className="mt-8 text-center">
-            <Link href="/" className="inline-block px-6 py-2 text-white transition bg-blue-600 rounded hover:bg-blue-700">
-              Continue Shopping
-            </Link>
+          <div className="flex justify-between pt-4 mt-4 text-lg font-bold border-t">
+            <span>Total:</span>
+            <span>৳{order.totalAmount.toFixed(2)}</span>
           </div>
         </div>
+
+        {/* Delivery Info */}
+        <div className="p-6 bg-white rounded-lg shadow">
+          <h2 className="mb-4 text-xl font-semibold">Delivery Information</h2>
+          <div className="space-y-3">
+            <p><strong>Name:</strong> {order.consumerId?.name || 'N/A'}</p>
+            <p><strong>Contact:</strong> {order.contact}</p>
+            <p><strong>Address:</strong> {order.address}</p>
+            <p>
+              <strong>Status:</strong>
+              <span className={`ml-2 px-3 py-1 text-sm rounded-full ${order.status === 'Paid' ? 'bg-green-100 text-green-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                {order.status}
+              </span>
+            </p>
+            <p className="pt-3 mt-3 text-sm text-gray-600 border-t">
+              Ordered on: {new Date(order.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center">
+        <Link href="/" className="inline-block px-6 py-2 text-white bg-blue-600 rounded hover:bg-blue-700">
+          Continue Shopping
+        </Link>
       </div>
     </div>
   );

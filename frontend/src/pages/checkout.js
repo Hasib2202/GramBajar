@@ -1,11 +1,11 @@
-// src/pages/checkout.js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import axios from 'axios';
 import { useCart } from '../context/CartContext';
-import { createOrder, processPayment } from '../lib/api/orderApi';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { toast } from 'react-hot-toast';
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -21,7 +21,7 @@ const Checkout = () => {
     additionalInfo: ''
   });
 
-  // Initialize dark mode based on system preference or localStorage
+  // Initialize dark mode
   useEffect(() => {
     const isDark = localStorage.getItem('darkMode') === 'true' ||
       window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -45,28 +45,70 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      // Create order
+      // Get user token
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user || !user.token) {
+        throw new Error('Please login to complete your order');
+      }
+
+      // Prepare order data
       const orderData = {
         contact: deliveryInfo.contactNumber,
         address: deliveryInfo.address,
         products: cartItems.map(item => ({
-          productId: item._id,
+          productId: item.id,  // Use id property from cart item
           quantity: item.quantity,
           price: item.price
         })),
         totalAmount: cartTotal
       };
 
-      const order = await createOrder(orderData);
+      // Create order directly
+      const createResponse = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders`,
+        orderData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.token}`
+          }
+        }
+      );
 
-      // Process payment
-      await processPayment(order._id);
+      const order = createResponse.data.order;
+      
+      // Process payment directly
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/${order._id}/pay`,
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        }
+      );
 
       // Clear cart and redirect
       clearCart();
       router.push(`/orderConfirmation/${order._id}`);
     } catch (error) {
-      alert(`Payment failed: ${error.response?.data?.message || error.message}`);
+      let errorMessage = 'Payment failed';
+      
+      if (error.response) {
+        // Use backend error message if available
+        errorMessage = error.response.data?.message || errorMessage;
+        
+        // Show detailed errors if available
+        if (error.response.data?.errors) {
+          errorMessage = error.response.data.errors.join(', ');
+        }
+        
+        console.error('Backend error:', error.response.data);
+      } else {
+        console.error('Error:', error.message);
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -211,7 +253,7 @@ const Checkout = () => {
                     <div key={index} className="mb-4">
                       <div className="flex justify-between">
                         <span className="font-medium">{item.title}</span>
-                        <span className="font-medium">${(item.discountedPrice * item.quantity).toFixed(2)}</span>
+                        <span className="font-medium">৳{(item.discountedPrice * item.quantity).toFixed(2)}</span>
                       </div>
                       <div className="mt-1 text-sm opacity-80">
                         Qty: {item.quantity}
@@ -222,7 +264,7 @@ const Checkout = () => {
 
                 <div className="flex justify-between mb-6 text-lg font-bold">
                   <span>Total</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>৳{cartTotal.toFixed(2)}</span>
                 </div>
 
                 <div className={`p-4 rounded-lg mb-4 ${darkMode ? 'bg-gray-700' : 'bg-green-50'}`}>

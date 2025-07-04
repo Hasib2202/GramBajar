@@ -71,7 +71,7 @@ const AdminReports = () => {
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'BDT'
     }).format(value);
   };
 
@@ -137,7 +137,8 @@ const AdminReports = () => {
               }`}>
                 <div className="flex items-center">
                   <div className="p-3 text-indigo-600 bg-indigo-100 rounded-full dark:bg-indigo-900 dark:text-indigo-200">
-                    <FiDollarSign size={24} />
+                    {/* <FiDollarSign size={24} /> */}
+                    ৳
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold">Total Sales</h3>

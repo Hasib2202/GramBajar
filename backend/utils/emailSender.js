@@ -24,7 +24,7 @@ export const sendVerificationEmail = async (email, token) => {
   try {
     const longUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
     const shortUrl = await shortenUrl(longUrl);
-    
+
     const mailOptions = {
       from: `GramBajar <${process.env.EMAIL_USER}>`,
       to: email,
@@ -180,51 +180,111 @@ export const verificationTemplate = (verificationToken) => `
 // Order confirmation email
 export const sendOrderConfirmationEmail = async (email, order) => {
   try {
-    const itemsHtml = order.products.map(item => `
-      <tr>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.productId.title}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$${item.price.toFixed(2)}</td>
-      </tr>
-    `).join('');
+    const itemsHtml = order.products.map(item => {
+      const originalPrice = Number(item.originalPrice);
+      const discountedPrice = Number(item.price);
+      const total = discountedPrice * item.quantity;
+      const discountPercentage = item.discount || 0;
+
+      return `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">
+            ${item.productId.title}
+            ${discountPercentage > 0 ?
+          `<br><span style="color: #e53935; font-size: 12px;">
+                ${discountPercentage}% OFF
+              </span>` : ''
+        }
+          </td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">
+            ${discountPercentage > 0 ? `
+              <div style="text-decoration: line-through; color: #999; font-size: 12px;">
+                ৳${originalPrice.toFixed(2)}
+              </div>
+            ` : ''}
+            <div>৳${discountedPrice.toFixed(2)}</div>
+          </td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">
+            ৳${total.toFixed(2)}
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalAmount = Number(order.totalAmount);
+    const subtotal = order.products.reduce((sum, item) =>
+      sum + (Number(item.originalPrice) * item.quantity), 0);
+    const totalDiscount = subtotal - totalAmount;
 
     const mailOptions = {
       from: `GramBajar <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Your GramBajar Order Confirmation',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee;">
           <div style="background-color: #3B945E; padding: 20px; text-align: center;">
             <h1 style="color: white; margin: 0;">Order Confirmed!</h1>
+            <p style="color: white; opacity: 0.8; margin: 5px 0 0;">
+              Order #${order._id.toString().slice(-8).toUpperCase()}
+            </p>
           </div>
           
           <div style="padding: 30px; background-color: #f9f9f9;">
             <p>Hello ${order.consumerId.name},</p>
             <p>Thank you for your order! We're preparing your items for shipment.</p>
             
-            <h3 style="color: #182628; margin-top: 30px;">Order Summary</h3>
+            <h3 style="color: #182628; margin-top: 30px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+              Order Summary
+            </h3>
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
               <thead>
                 <tr>
                   <th style="text-align: left; padding: 8px; background-color: #eee;">Product</th>
                   <th style="text-align: center; padding: 8px; background-color: #eee;">Qty</th>
-                  <th style="text-align: right; padding: 8px; background-color: #eee;">Price</th>
+                  <th style="text-align: right; padding: 8px; background-color: #eee;">Unit Price</th>
+                  <th style="text-align: right; padding: 8px; background-color: #eee;">Total</th>
                 </tr>
               </thead>
               <tbody>
                 ${itemsHtml}
-                <tr>
-                  <td colspan="2" style="text-align: right; padding: 8px; font-weight: bold;">Total:</td>
-                  <td style="text-align: right; padding: 8px; font-weight: bold;">$${order.totalAmount.toFixed(2)}</td>
-                </tr>
               </tbody>
             </table>
             
-            <h3 style="color: #182628;">Delivery Information</h3>
-            <p><strong>Address:</strong> ${order.address}</p>
-            <p><strong>Contact:</strong> ${order.contact}</p>
+            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>Subtotal:</span>
+                <span>৳${subtotal.toFixed(2)}</span>
+              </div>
+              ${totalDiscount > 0 ? `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; color: #e53935;">
+                  <span>Discount:</span>
+                  <span>-৳${totalDiscount.toFixed(2)}</span>
+                </div>
+              ` : ''}
+              <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1em;">
+                <span>Total:</span>
+                <span>৳${totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
             
-            <p>We'll notify you when your order ships. You can check the status of your order anytime in your account.</p>
+            <h3 style="color: #182628; margin-top: 30px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+              Delivery Information
+            </h3>
+            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+              <p><strong>Name:</strong> ${order.consumerId.name}</p>
+              <p><strong>Contact:</strong> ${order.contact}</p>
+              <p><strong>Address:</strong> ${order.address}</p>
+              <p><strong>Status:</strong> 
+                <span style="color: ${order.status === 'Paid' ? '#388e3c' : '#f57c00'}">
+                  ${order.status}
+                </span>
+              </p>
+            </div>
+            
+            <p style="margin-top: 20px;">
+              We'll notify you when your order ships. You can check the status of your order anytime in your account.
+            </p>
             <p>Thank you for shopping with GramBajar!</p>
           </div>
           

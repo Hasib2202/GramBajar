@@ -246,7 +246,7 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
       id: product._id,
       name: product.title,
       price: product.price,
-      discount: product.discount || 0,
+      discount: product.discount || product.price,
       discountedPrice: discountPrice,
       images: product.images || []
     });
