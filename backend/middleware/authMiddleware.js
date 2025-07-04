@@ -80,4 +80,19 @@ export const verifyAdmin = async (req, res, next) => {
   }
 };
 
+// Middleware for any authenticated user
+export const verifyUser = async (req, res, next) => {
+  const result = await authenticate(req);
+  
+  if (!result.success) {
+    return res.status(result.status).json({ 
+      success: false, 
+      message: result.message 
+    });
+  }
+  
+  req.user = result.user;
+  next();
+};
+
 export default protect;

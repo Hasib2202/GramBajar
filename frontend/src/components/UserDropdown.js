@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { FiSettings, FiLogOut, FiUser, FiShoppingCart, FiEdit, FiLock } from 'react-icons/fi';
 import { useRouter } from 'next/router';
+import { getUser, logout } from '../utils/auth';
 
 const UserDropdown = ({ darkMode }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +12,7 @@ const UserDropdown = ({ darkMode }) => {
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef(null);
   const router = useRouter();
+  const user = getUser();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -20,7 +22,7 @@ const UserDropdown = ({ darkMode }) => {
         router.replace("/login");
         return;
       }
-      
+
       const { token } = JSON.parse(stored);
       if (!token) {
         router.replace("/login");
@@ -38,14 +40,14 @@ const UserDropdown = ({ darkMode }) => {
             }
           }
         );
-        
+
         if (!res.ok) {
           throw new Error("Not authorized");
         }
-        
+
         const data = await res.json();
         setLocalUser(data);
-        
+
         // Add cache busting to image URL
         if (data.image) {
           setImageUrl(`${data.image}?${Date.now()}`);
@@ -83,26 +85,27 @@ const UserDropdown = ({ darkMode }) => {
       const updatedUser = { ...localUser, image: '' };
       setLocalUser(updatedUser);
       setImageUrl('');
-      
+
       // Update localStorage
       localStorage.setItem('user', JSON.stringify(updatedUser));
     }
   };
 
   const handleLogout = async () => {
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      localStorage.removeItem('user');
-      router.replace('/');
-    }
+    // try {
+    //   await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`, {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     }
+    //   });
+    // } catch (error) {
+    //   console.error('Logout failed:', error);
+    // } finally {
+    //   localStorage.removeItem('user');
+    //   router.replace('/');
+    // }
+    await logout();
   };
 
   // Get user initials for fallback
@@ -119,9 +122,8 @@ const UserDropdown = ({ darkMode }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center w-10 h-10 overflow-hidden transition-all duration-200 border-2 border-green-500 rounded-full">
-        <div className={`w-full h-full flex items-center justify-center ${
-          darkMode ? 'bg-gray-700' : 'bg-green-100'
-        }`}>
+        <div className={`w-full h-full flex items-center justify-center ${darkMode ? 'bg-gray-700' : 'bg-green-100'
+          }`}>
           <div className="w-4 h-4 border-t-2 border-green-500 rounded-full animate-spin"></div>
         </div>
       </div>
@@ -145,9 +147,8 @@ const UserDropdown = ({ darkMode }) => {
             onError={handleImageError}
           />
         ) : (
-          <div className={`w-full h-full flex items-center justify-center text-sm font-medium ${
-            darkMode ? 'bg-gray-700 text-green-400' : 'bg-green-100 text-green-600'
-          }`}>
+          <div className={`w-full h-full flex items-center justify-center text-sm font-medium ${darkMode ? 'bg-gray-700 text-green-400' : 'bg-green-100 text-green-600'
+            }`}>
             {localUser.name ? getUserInitials(localUser.name) : <FiUser size={20} />}
           </div>
         )}
@@ -156,16 +157,15 @@ const UserDropdown = ({ darkMode }) => {
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Dropdown Menu */}
-          <div className={`absolute right-0 mt-2 w-64 rounded-lg shadow-lg py-1 z-50 transform transition-all duration-200 ${
-            darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
-          }`}>
-            
+          <div className={`absolute right-0 mt-2 w-64 rounded-lg shadow-lg py-1 z-50 transform transition-all duration-200 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+            }`}>
+
             {/* User Info Section */}
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3">
@@ -178,22 +178,19 @@ const UserDropdown = ({ darkMode }) => {
                       onError={handleImageError}
                     />
                   ) : (
-                    <div className={`w-full h-full flex items-center justify-center text-sm font-medium ${
-                      darkMode ? 'bg-gray-700 text-green-400' : 'bg-green-100 text-green-600'
-                    }`}>
+                    <div className={`w-full h-full flex items-center justify-center text-sm font-medium ${darkMode ? 'bg-gray-700 text-green-400' : 'bg-green-100 text-green-600'
+                      }`}>
                       {localUser.name ? getUserInitials(localUser.name) : <FiUser size={20} />}
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${
-                    darkMode ? 'text-gray-200' : 'text-gray-800'
-                  }`}>
+                  <p className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-800'
+                    }`}>
                     {localUser.name || 'User'}
                   </p>
-                  <p className={`text-xs truncate ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>
+                  <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
                     {localUser.email}
                   </p>
                 </div>
@@ -204,11 +201,10 @@ const UserDropdown = ({ darkMode }) => {
             <div className="py-1">
               <Link
                 href="/profile"
-                className={`flex items-center px-4 py-2 text-sm transition-colors ${
-                  darkMode 
-                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                className={`flex items-center px-4 py-2 text-sm transition-colors ${darkMode
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
                 onClick={() => setIsOpen(false)}
               >
                 <FiSettings className="w-4 h-4 mr-3" />
@@ -217,11 +213,10 @@ const UserDropdown = ({ darkMode }) => {
 
               <Link
                 href="/profile"
-                className={`flex items-center px-4 py-2 text-sm transition-colors ${
-                  darkMode 
-                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                className={`flex items-center px-4 py-2 text-sm transition-colors ${darkMode
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
                 onClick={() => setIsOpen(false)}
               >
                 <FiShoppingCart className="w-4 h-4 mr-3" />
@@ -230,11 +225,10 @@ const UserDropdown = ({ darkMode }) => {
 
               <Link
                 href="/profile"
-                className={`flex items-center px-4 py-2 text-sm transition-colors ${
-                  darkMode 
-                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                className={`flex items-center px-4 py-2 text-sm transition-colors ${darkMode
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
                 onClick={() => setIsOpen(false)}
               >
                 <FiLock className="w-4 h-4 mr-2" />
@@ -243,24 +237,22 @@ const UserDropdown = ({ darkMode }) => {
 
               <Link
                 href="/profile"
-                className={`flex items-center px-4 py-2 text-sm transition-colors ${
-                  darkMode 
-                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                className={`flex items-center px-4 py-2 text-sm transition-colors ${darkMode
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
                 onClick={() => setIsOpen(false)}
               >
                 <FiEdit className="w-4 h-4 mr-2" />
                 Edit Profile
               </Link>
-              
+
               <button
                 onClick={handleLogout}
-                className={`w-full text-left flex items-center px-4 py-2 text-sm transition-colors ${
-                  darkMode 
-                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                className={`w-full text-left flex items-center px-4 py-2 text-sm transition-colors ${darkMode
+                    ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <FiLogOut className="w-4 h-4 mr-3" />
                 Logout

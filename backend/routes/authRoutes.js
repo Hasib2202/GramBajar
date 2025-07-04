@@ -34,7 +34,7 @@ router.put('/password', protect, updatePassword);
 router.put('/profile', protect, updateUserProfile);
 router.post('/upload', protect, uploadProfileImage);
 
-router.get('/verify-token', verifyToken); // Add this route
+router.get('/verify', verifyToken); // Add this route
 router.post('/register-admin', registerAdmin);
 
 export default router;

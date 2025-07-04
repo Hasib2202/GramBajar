@@ -70,6 +70,10 @@ app.use('/api/admin/products', productRoutes);
 app.use('/api/admin/orders', orderRoutes);
 app.use('/api/public', publicRoutes); // Add public routes
 
+
+// Mount order routes
+app.use('/api/orders', orderRoutes); // Make sure this line exists
+
 // Error handling middleware
 app.use(notFound);
 app.use(errorHandler);

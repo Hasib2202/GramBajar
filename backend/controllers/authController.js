@@ -43,7 +43,8 @@ export const loginUser = async (req, res) => {
       success: true,
       message: 'Login successful',
       token,
-      redirectPath, // Add this
+      // redirectPath, // Add this
+      redirectPath: user.role === 'Admin' ? '/admin/dashboard' : '/',
       user: {
         id: user._id,
         name: user.name,
@@ -569,33 +570,90 @@ export const logout = (req, res) => {
   res.json({ message: 'Logged out successfully' });
 };
 
+
+// Verify token endpoint
 export const verifyToken = async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
+    const token = req.cookies.token;
     if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ 
+        message: 'Session expired, please login again' 
+      });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select('-password');
     
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ 
+        message: 'User not found' 
+      });
     }
-
-    res.json(user);
+    
+    // Return user with role
+    res.json({
+      isAuthenticated: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        image: user.image,
+        isVerified: user.isVerified
+      }
+    });
   } catch (error) {
-    console.error('Token verification error:', error);
-    
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired' });
+      return res.status(401).json({ 
+        message: 'Session expired, please login again' 
+      });
     }
     
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-    
-    res.status(500).json({ message: 'Server error' });
+    res.status(401).json({ 
+      message: 'Invalid authentication token' 
+    });
   }
 };
+
+// export const verifyToken = async (req, res) => {
+//   try {
+//     // Get token from cookies
+//     const token = req.cookies.token;
+
+//     if (!token) {
+//       return res.status(401).json({ message: 'Authentication required' });
+//     }
+
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     const user = await User.findById(decoded.id).select('-password');
+    
+//     if (!user) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
+
+//     // Return consistent response format
+//     res.json({
+//       isAuthenticated: true,
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//         role: user.role,
+//         image: user.image,
+//         isVerified: user.isVerified
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Token verification error:', error);
+    
+//     if (error.name === 'TokenExpiredError') {
+//       return res.status(401).json({ message: 'Token expired' });
+//     }
+    
+//     if (error.name === 'JsonWebTokenError') {
+//       return res.status(401).json({ message: 'Invalid token' });
+//     }
+    
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };

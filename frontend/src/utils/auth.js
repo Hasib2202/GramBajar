@@ -1,35 +1,50 @@
-// Store token in cookie
-export const storeToken = (token) => {
-  document.cookie = `token=${token}; path=/; max-age=86400; secure; samesite=strict`;
-};
+// src/utils/auth.js
+// Check if running in browser environment
+const isBrowser = typeof window !== 'undefined';
 
-// Remove token
-export const removeToken = () => {
-  document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-};
-
-// Get token
-export const getToken = () => {
-  return document.cookie
-    .split('; ')
-    .find(row => row.startsWith('token='))
-    ?.split('=')[1];
-};
-
-// Check authentication status
-export const isAuthenticated = () => {
-  return !!getToken();
-};
-
-// Get user role (requires token decoding)
-export const getUserRole = () => {
-  const token = getToken();
-  if (!token) return null;
-  
+// Verify authentication with backend
+export const verifyAuth = async () => {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.role;
-  } catch (e) {
-    return null;
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/verify`, {
+      credentials: 'include',
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.isAuthenticated;
+    }
+    return false;
+  } catch (error) {
+    console.error('Auth verification failed:', error);
+    return false;
+  }
+};
+
+// Get user data
+export const getUser = () => {
+  if (isBrowser) {
+    const userData = localStorage.getItem('user');
+    return userData ? JSON.parse(userData) : null;
+  }
+  return null;
+};
+
+// Logout function
+export const logout = async () => {
+  try {
+    // Call backend logout endpoint
+    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    // Clear frontend auth state
+    localStorage.removeItem('user');
+
+    // Redirect to login
+    window.location.href = '/login';
+  } catch (error) {
+    console.error('Logout failed:', error);
+    window.location.href = '/login';
   }
 };

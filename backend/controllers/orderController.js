@@ -1,5 +1,6 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import { sendOrderConfirmationEmail } from '../utils/emailSender.js';
 
 // Get all orders
 export const getOrders = async (req, res) => {
@@ -276,6 +277,132 @@ export const getSalesReport = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to generate sales report',
+      error: error.message
+    });
+  }
+};
+
+
+
+// Create new order
+export const createOrder = async (req, res) => {
+  try {
+    const { contact, address, products, totalAmount } = req.body;
+    
+    // Validate products
+    for (const item of products) {
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        return res.status(400).json({
+          success: false,
+          message: `Product ${item.productId} not found`
+        });
+      }
+      if (product.stock < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for ${product.title}`
+        });
+      }
+    }
+
+    const order = new Order({
+      consumerId: req.user._id,
+      contact,
+      address,
+      products,
+      totalAmount,
+      status: 'Pending'
+    });
+
+    await order.save();
+    
+    res.status(201).json({
+      success: true,
+      order
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create order',
+      error: error.message
+    });
+  }
+};
+
+// Process payment
+export const processPayment = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('consumerId', 'email name')
+      .populate('products.productId', 'title price');
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    // Validate order status
+    if (order.status !== 'Pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Order already ${order.status.toLowerCase()}`
+      });
+    }
+
+    // Reduce product stock
+    for (const item of order.products) {
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { stock: -item.quantity } }
+      );
+    }
+
+    // Update order status
+    order.status = 'Paid';
+    await order.save();
+
+    // Send confirmation email
+    await sendOrderConfirmationEmail(order.consumerId.email, order);
+
+    res.json({
+      success: true,
+      message: 'Payment processed successfully',
+      order
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Payment processing failed',
+      error: error.message
+    });
+  }
+};
+
+// Get order details
+export const getOrderDetails = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('consumerId', 'name email')
+      .populate('products.productId', 'title price');
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      order
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get order details',
       error: error.message
     });
   }

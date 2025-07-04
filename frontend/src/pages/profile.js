@@ -140,6 +140,7 @@ const ProfilePage = () => {
   const handleLogout = () => {
     localStorage.removeItem("user");
     router.push("/login");
+    
   };
 
   // API Functions

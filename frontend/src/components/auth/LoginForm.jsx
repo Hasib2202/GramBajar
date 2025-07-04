@@ -19,7 +19,6 @@ const LoginForm = () => {
 
     if (verification === 'success') {
       setSuccess('Email verified successfully! You can now login.');
-      // Clean URL
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
     }
@@ -48,7 +47,7 @@ const LoginForm = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
-          credentials: 'include',
+          credentials: 'include', // Include cookies
         }
       );
 
@@ -57,15 +56,17 @@ const LoginForm = () => {
       if (response.ok) {
         setSuccess('Login successful!');
 
-        // Store user data
+        // Store user data with token
         const userData = {
           id: data.user.id,
           name: data.user.name,
           email: data.user.email,
           role: data.user.role,
-          profilePicture: data.user.profilePicture,
+          profilePicture: data.user.image,
+          isVerified: data.user.isVerified,
           token: data.token
         };
+        
         localStorage.setItem('user', JSON.stringify(userData));
 
         // Check for redirect data
@@ -74,20 +75,16 @@ const LoginForm = () => {
         if (redirectData) {
           const { path, cartItems } = JSON.parse(redirectData);
           
-          // Restore cart if exists
           if (cartItems) {
             localStorage.setItem('cart', JSON.stringify(cartItems));
           }
           
-          // Remove redirect data
           localStorage.removeItem('redirectAfterLogin');
           
-          // Redirect to intended page
           setTimeout(() => {
             router.push(path);
           }, 1000);
         } else {
-          // Redirect based on role
           setTimeout(() => {
             if (data.user.role === 'Admin') {
               router.push('/admin/dashboard');
@@ -107,11 +104,9 @@ const LoginForm = () => {
   };
 
   const handleGoogleLogin = () => {
-    // Add random state parameter
     const state = Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem('oauth_state', state);
 
-    // Redirect to Google auth
     window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google?prompt=select_account&state=${state}`;
   };
 
@@ -141,7 +136,7 @@ const LoginForm = () => {
           )}
 
           {/* Form */}
-          <div className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email Address
@@ -194,14 +189,13 @@ const LoginForm = () => {
             </div>
 
             <button
-              type="button"
-              onClick={handleSubmit}
+              type="submit"
               disabled={loading}
               className="w-full px-4 py-3 font-medium text-white transition-all rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
-          </div>
+          </form>
 
           <div className="flex items-center my-6">
             <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>

@@ -381,8 +381,8 @@ const AdminUsers = () => {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className="flex-shrink-0 w-10 h-10">
-                                  {user.avatar ? (
-                                    <img className="w-10 h-10 rounded-full" src={user.avatar} alt={user.name} />
+                                  {user.image ? (
+                                    <img className="w-10 h-10 rounded-full" src={user.image} alt={user.name} />
                                   ) : (
                                     <div className={`flex items-center justify-center w-10 h-10 rounded-full ${darkMode ? 'bg-gray-600' : 'bg-gray-200'
                                       }`}>
