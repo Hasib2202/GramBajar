@@ -4,11 +4,15 @@ import Product from "../models/Product.js";
 import { sendOrderConfirmationEmail } from "../utils/emailSender.js";
 import { safeConvertDecimal } from "../utils/convertUtils.js";
 
-// Get all orders
+// Update getOrders function
 export const getOrders = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, search } = req.query;
-
+    
+    // Convert to numbers
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    
     let query = {};
 
     if (status) {
@@ -30,10 +34,10 @@ export const getOrders = async (req, res) => {
       })
       .populate({
         path: "products.productId",
-        select: "title price images",
+        select: "title price images discount",
       })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
       .sort({ createdAt: -1 });
 
     const total = await Order.countDocuments(query);
@@ -42,8 +46,8 @@ export const getOrders = async (req, res) => {
       success: true,
       orders,
       total,
-      page: parseInt(page),
-      pages: Math.ceil(total / limit),
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
     });
   } catch (error) {
     res.status(500).json({

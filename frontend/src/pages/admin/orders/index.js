@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { 
   FiSearch, FiFilter, FiX, FiDollarSign, 
-  FiTruck, FiCheck, FiXCircle, FiClock 
+  FiTruck, FiCheck, FiXCircle, FiClock, FiEye
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/context/ThemeContext';
+import Link from 'next/link';
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -70,11 +71,14 @@ const AdminOrders = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setCurrentPage(1);
     fetchOrders(1, searchQuery, statusFilter);
   };
 
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
@@ -88,7 +92,7 @@ const AdminOrders = () => {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/admin${orderId}/status`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/admin/${orderId}/status`,
         {
           method: 'PUT',
           headers: {
@@ -166,14 +170,132 @@ const AdminOrders = () => {
     }
   };
 
+  // Fixed amount formatting with comprehensive error handling
+  const formatAmount = (amount) => {
+    try {
+      // Handle null, undefined, or empty values
+      if (amount === null || amount === undefined || amount === '') {
+        return '৳0.00';
+      }
+      
+      let value = amount;
+      
+      // Handle MongoDB Decimal128 or other object types
+      if (typeof value === 'object' && value !== null) {
+        // Check if it has a $numberDecimal property (MongoDB Decimal128)
+        if (value.$numberDecimal) {
+          value = value.$numberDecimal;
+        } else if (value.toString && typeof value.toString === 'function') {
+          value = value.toString();
+        } else if (value.valueOf && typeof value.valueOf === 'function') {
+          value = value.valueOf();
+        } else {
+          console.warn('Unknown object type for amount:', amount);
+          return '৳0.00';
+        }
+      }
+      
+      // If it's a string, clean it up
+      if (typeof value === 'string') {
+        // Remove any non-numeric characters except decimal point and minus sign
+        value = value.replace(/[^0-9.-]/g, '');
+      }
+      
+      // Convert to number
+      const numericValue = parseFloat(value);
+      
+      // Validate the number
+      if (isNaN(numericValue)) {
+        console.warn('Invalid amount value:', amount);
+        return '৳0.00';
+      }
+      
+      // Format the number with proper decimal places
+      return `৳${numericValue.toFixed(2)}`;
+    } catch (error) {
+      console.error('Error formatting amount:', amount, error);
+      return '৳0.00';
+    }
+  };
+
   const renderPagination = () => {
-    // ... similar to previous pagination implementation ...
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = startPage + maxPagesToShow - 1;
+
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-3 py-1 rounded ${
+            currentPage === i
+              ? 'bg-indigo-600 text-white'
+              : darkMode
+                ? 'bg-gray-700 hover:bg-gray-600'
+                : 'bg-gray-200 hover:bg-gray-300'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-between mt-6">
+        <div className="text-sm">
+          Showing {Math.min((currentPage - 1) * limit + 1, totalOrders)} to{' '}
+          {Math.min(currentPage * limit, totalOrders)} of {totalOrders} orders
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded ${
+              currentPage === 1
+                ? 'opacity-50 cursor-not-allowed'
+                : darkMode
+                  ? 'bg-gray-700 hover:bg-gray-600'
+                  : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+          >
+            Previous
+          </button>
+          
+          {pages}
+          
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded ${
+              currentPage === totalPages
+                ? 'opacity-50 cursor-not-allowed'
+                : darkMode
+                  ? 'bg-gray-700 hover:bg-gray-600'
+                  : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
     <AdminLayout>
       <div className="p-6">
-        <h1 className="mb-6 text-2xl font-bold">Order Management</h1>
+        <h1 className={`mb-6 text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          Order Management
+        </h1>
         
         <div className={`p-4 rounded-lg mb-6 ${
           darkMode ? 'bg-gray-800' : 'bg-gray-50'
@@ -219,6 +341,7 @@ const AdminOrders = () => {
                 onClick={() => {
                   setSearchQuery('');
                   setStatusFilter('');
+                  setCurrentPage(1);
                 }}
                 className={`px-3 py-2 rounded-lg flex items-center ${
                   darkMode 
@@ -252,6 +375,9 @@ const AdminOrders = () => {
                         Customer
                       </th>
                       <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase">
+                        Items
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase">
                         Amount
                       </th>
                       <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase">
@@ -265,7 +391,7 @@ const AdminOrders = () => {
                   <tbody className={`divide-y ${darkMode ? 'divide-gray-700 bg-gray-800' : 'divide-gray-200 bg-white'}`}>
                     {orders.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="px-6 py-4 text-center">
+                        <td colSpan="6" className="px-6 py-4 text-center">
                           No orders found
                         </td>
                       </tr>
@@ -289,11 +415,13 @@ const AdminOrders = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                              {/* ৳{order.totalAmount.toFixed(2)} */}
-                            </div>
                             <div className="text-sm text-gray-500">
-                              {order.products.length} items
+                              {order.products?.length || 0} items
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {formatAmount(order.totalAmount)}
                             </div>
                           </td>
                           <td className="px-6 py-4">
@@ -321,12 +449,13 @@ const AdminOrders = () => {
                                   </option>
                                 ))}
                               </select>
-                              <button
-                                className="p-2 text-indigo-600 bg-indigo-100 rounded-full hover:bg-indigo-200 dark:bg-indigo-900 dark:hover:bg-indigo-800"
+                              <Link 
+                                href={`/admin/orders/${order._id}`}
+                                className="flex items-center justify-center p-2 text-indigo-600 bg-indigo-100 rounded-full hover:bg-indigo-200 dark:bg-indigo-900 dark:hover:bg-indigo-800"
                                 title="View Details"
                               >
-                                <FiTruck size={16} />
-                              </button>
+                                <FiEye size={16} />
+                              </Link>
                             </div>
                           </td>
                         </tr>
