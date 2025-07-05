@@ -359,13 +359,11 @@ export const googleCallback = (req, res, next) => {
     const state = req.query.state ? JSON.parse(req.query.state) : {};
     const redirectUrl = state.redirect || process.env.FRONTEND_URL;
     
-    // Add cache busting parameter to profile picture URL
-    const cacheBustedProfile = user.profilePicture 
-      ? `${user.profilePicture}?${Date.now()}` 
-      : '';
+     // Use original profile picture URL without modifications
+    const profilePicture = user.profilePicture || '';
     
     res.redirect(
-      `${redirectUrl}/login/success?token=${token}&id=${user._id}&name=${encodeURIComponent(user.name)}&email=${user.email}&profilePicture=${encodeURIComponent(cacheBustedProfile)}`
+      `${redirectUrl}/login/success?token=${token}&id=${user._id}&name=${encodeURIComponent(user.name)}&email=${user.email}&profilePicture=${encodeURIComponent(profilePicture)}`
     );
   })(req, res, next);
 };
