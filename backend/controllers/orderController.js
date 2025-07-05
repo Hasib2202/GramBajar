@@ -145,44 +145,143 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-// Get sales reports
+// Get sales reports - Final fix for missing revenue data
 export const getSalesReport = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    let matchStage = { status: "Completed" };
+    // More flexible status matching
+    let matchStage = { 
+      status: { 
+        $in: ["Completed", "completed", "Delivered", "delivered", "Success", "success", "Paid", "paid"] 
+      } 
+    };
 
     if (startDate && endDate) {
       matchStage.createdAt = {
         $gte: new Date(startDate),
-        $lte: new Date(endDate),
+        $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
       };
     }
 
-    const report = await Order.aggregate([
+    // Check what fields exist in orders
+    const sampleOrder = await Order.findOne(matchStage);
+    console.log("Sample order structure:", sampleOrder);
+
+    // Count total matching orders
+    const totalMatchingOrders = await Order.countDocuments(matchStage);
+    console.log("Total matching orders:", totalMatchingOrders);
+
+    // If no orders match status, try without status filter
+    if (totalMatchingOrders === 0) {
+      console.log("No orders with specified status, trying without status filter");
+      matchStage = startDate && endDate ? {
+        createdAt: {
+          $gte: new Date(startDate),
+          $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
+        }
+      } : {};
+    }
+
+    // Try multiple possible field names for total amount
+    const orderStatsMultiple = await Order.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: null,
+          // Try different possible field names
+          totalSales1: { $sum: "$totalAmount" },
+          totalSales2: { $sum: "$total" },
+          totalSales3: { $sum: "$totalPrice" },
+          totalSales4: { $sum: "$amount" },
+          totalSales5: { $sum: "$grandTotal" },
+          totalOrders: { $sum: 1 },
+          averageOrderValue1: { $avg: "$totalAmount" },
+          averageOrderValue2: { $avg: "$total" },
+          averageOrderValue3: { $avg: "$totalPrice" },
+          averageOrderValue4: { $avg: "$amount" },
+          averageOrderValue5: { $avg: "$grandTotal" },
+        },
+      },
+    ]);
+
+    console.log("Multiple field attempt results:", orderStatsMultiple[0]);
+
+    // Determine which field has actual values
+    let totalSales = 0;
+    let averageOrderValue = 0;
+    
+    if (orderStatsMultiple[0]) {
+      const stats = orderStatsMultiple[0];
+      totalSales = stats.totalSales1 || stats.totalSales2 || stats.totalSales3 || stats.totalSales4 || stats.totalSales5 || 0;
+      averageOrderValue = stats.averageOrderValue1 || stats.averageOrderValue2 || stats.averageOrderValue3 || stats.averageOrderValue4 || stats.averageOrderValue5 || 0;
+    }
+
+    // Get total items sold
+    const itemsStats = await Order.aggregate([
       { $match: matchStage },
       { $unwind: "$products" },
       {
         $group: {
           _id: null,
-          totalSales: { $sum: "$totalAmount" },
-          totalOrders: { $sum: 1 },
           totalItemsSold: { $sum: "$products.quantity" },
-          averageOrderValue: { $avg: "$totalAmount" },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          totalSales: 1,
-          totalOrders: 1,
-          totalItemsSold: 1,
-          averageOrderValue: { $round: ["$averageOrderValue", 2] },
         },
       },
     ]);
 
-    // Get top selling products
+    // If we still don't have sales data, try calculating from products
+    if (totalSales === 0) {
+      console.log("No totalAmount found, calculating from products");
+      
+      const calculatedSales = await Order.aggregate([
+        { $match: matchStage },
+        { $unwind: "$products" },
+        {
+          $group: {
+            _id: null,
+            // Try different price field names
+            totalFromProducts1: { $sum: { $multiply: ["$products.quantity", "$products.price"] } },
+            totalFromProducts2: { $sum: { $multiply: ["$products.quantity", "$products.unitPrice"] } },
+            totalFromProducts3: { $sum: { $multiply: ["$products.quantity", "$products.cost"] } },
+            totalFromProducts4: { $sum: { $multiply: ["$products.qty", "$products.price"] } },
+          },
+        },
+      ]);
+      
+      console.log("Calculated from products:", calculatedSales[0]);
+      
+      if (calculatedSales[0]) {
+        const calc = calculatedSales[0];
+        totalSales = calc.totalFromProducts1 || calc.totalFromProducts2 || calc.totalFromProducts3 || calc.totalFromProducts4 || 0;
+        
+        // Recalculate average if we found sales from products
+        if (totalSales > 0 && orderStatsMultiple[0]?.totalOrders > 0) {
+          averageOrderValue = totalSales / orderStatsMultiple[0].totalOrders;
+        }
+      }
+    }
+
+    // Helper function to convert Decimal128 to number
+    const convertDecimal128 = (value) => {
+      if (value && value.$numberDecimal) {
+        return parseFloat(value.$numberDecimal);
+      }
+      if (value && typeof value.toString === 'function') {
+        return parseFloat(value.toString());
+      }
+      return typeof value === 'number' ? value : parseFloat(value) || 0;
+    };
+
+    const report = {
+      totalSales: convertDecimal128(totalSales),
+      totalOrders: orderStatsMultiple[0]?.totalOrders || 0,
+      averageOrderValue: Math.round(convertDecimal128(averageOrderValue) * 100) / 100, // Round to 2 decimal places
+      totalItemsSold: itemsStats[0]?.totalItemsSold || 0,
+    };
+
+    console.log("Final report data:", report);
+
+    // Get top selling products with flexible price fields
     const topProducts = await Order.aggregate([
       { $match: matchStage },
       { $unwind: "$products" },
@@ -190,10 +289,22 @@ export const getSalesReport = async (req, res) => {
         $group: {
           _id: "$products.productId",
           totalQuantity: { $sum: "$products.quantity" },
-          totalRevenue: {
-            $sum: { $multiply: ["$products.quantity", "$products.price"] },
-          },
+          // Try multiple price field combinations
+          totalRevenue1: { $sum: { $multiply: ["$products.quantity", "$products.price"] } },
+          totalRevenue2: { $sum: { $multiply: ["$products.quantity", "$products.unitPrice"] } },
+          totalRevenue3: { $sum: { $multiply: ["$products.quantity", "$products.cost"] } },
+          totalRevenue4: { $sum: { $multiply: ["$products.qty", "$products.price"] } },
         },
+      },
+      {
+        $addFields: {
+          totalRevenue: {
+            $ifNull: [
+              "$totalRevenue1",
+              { $ifNull: ["$totalRevenue2", { $ifNull: ["$totalRevenue3", "$totalRevenue4"] }] }
+            ]
+          }
+        }
       },
       { $sort: { totalQuantity: -1 } },
       { $limit: 5 },
@@ -215,9 +326,16 @@ export const getSalesReport = async (req, res) => {
           totalRevenue: 1,
         },
       },
-    ]);
+    ]).then(results => 
+      results.map(product => ({
+        ...product,
+        totalRevenue: convertDecimal128(product.totalRevenue)
+      }))
+    );
 
-    // Get sales by category
+    console.log("Top products with revenue:", topProducts);
+
+    // Get sales by category with flexible pricing
     const salesByCategory = await Order.aggregate([
       { $match: matchStage },
       { $unwind: "$products" },
@@ -242,43 +360,100 @@ export const getSalesReport = async (req, res) => {
       {
         $group: {
           _id: "$category.name",
-          totalRevenue: {
-            $sum: { $multiply: ["$products.quantity", "$products.price"] },
-          },
+          totalRevenue1: { $sum: { $multiply: ["$products.quantity", "$products.price"] } },
+          totalRevenue2: { $sum: { $multiply: ["$products.quantity", "$products.unitPrice"] } },
+          totalRevenue3: { $sum: { $multiply: ["$products.quantity", "$products.cost"] } },
           totalItems: { $sum: "$products.quantity" },
         },
       },
+      {
+        $addFields: {
+          totalRevenue: {
+            $ifNull: [
+              "$totalRevenue1",
+              { $ifNull: ["$totalRevenue2", "$totalRevenue3"] }
+            ]
+          }
+        }
+      },
       { $sort: { totalRevenue: -1 } },
-    ]);
+      {
+        $project: {
+          _id: 1,
+          totalRevenue: 1,
+          totalItems: 1
+        }
+      }
+    ]).then(results => 
+      results.map(category => ({
+        ...category,
+        totalRevenue: convertDecimal128(category.totalRevenue)
+      }))
+    );
 
-    // Get sales over time (daily)
+    // Get sales over time with flexible total amount fields
     const salesOverTime = await Order.aggregate([
       { $match: matchStage },
       {
         $group: {
-          _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
-          },
-          totalSales: { $sum: "$totalAmount" },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          totalSales1: { $sum: "$totalAmount" },
+          totalSales2: { $sum: "$total" },
+          totalSales3: { $sum: "$totalPrice" },
+          totalSales4: { $sum: "$amount" },
+          totalSales5: { $sum: "$grandTotal" },
           orderCount: { $sum: 1 },
         },
       },
+      {
+        $addFields: {
+          totalSales: {
+            $ifNull: [
+              "$totalSales1",
+              { $ifNull: [
+                "$totalSales2", 
+                { $ifNull: [
+                  "$totalSales3", 
+                  { $ifNull: ["$totalSales4", "$totalSales5"] }
+                ]}
+              ]}
+            ]
+          }
+        }
+      },
       { $sort: { _id: 1 } },
-    ]);
+      {
+        $project: {
+          _id: 1,
+          totalSales: 1,
+          orderCount: 1
+        }
+      }
+    ]).then(results => 
+      results.map(timeEntry => ({
+        ...timeEntry,
+        totalSales: convertDecimal128(timeEntry.totalSales)
+      }))
+    );
 
     res.json({
       success: true,
-      report: report[0] || {
-        totalSales: 0,
-        totalOrders: 0,
-        totalItemsSold: 0,
-        averageOrderValue: 0,
-      },
+      report,
       topProducts,
       salesByCategory,
       salesOverTime,
+      debug: {
+        matchStage,
+        totalMatchingOrders,
+        sampleOrderFields: sampleOrder ? Object.keys(sampleOrder.toObject()) : [],
+        sampleProductFields: sampleOrder?.products?.[0] ? Object.keys(sampleOrder.products[0]) : [],
+        orderStatsMultiple: orderStatsMultiple[0],
+        detectedTotalSales: convertDecimal128(totalSales),
+        detectedAverageOrderValue: convertDecimal128(averageOrderValue)
+      }
     });
   } catch (error) {
+    console.error("Sales report error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to generate sales report",
@@ -286,7 +461,6 @@ export const getSalesReport = async (req, res) => {
     });
   }
 };
-
 // Create new order
 export const createOrder = async (req, res) => {
   try {

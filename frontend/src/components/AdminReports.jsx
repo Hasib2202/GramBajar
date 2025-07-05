@@ -35,11 +35,14 @@ const AdminReports = () => {
         return;
       }
 
+      console.log('Fetching report with date range:', dateRange); // Debug log
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/admin/reports/sales?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -50,10 +53,20 @@ const AdminReports = () => {
       }
 
       const data = await response.json();
-      setReport(data);
+      console.log('Sales Report Data:', data); // Debug log
+      
+      // Check if we have valid data
+      if (data.success && data.report) {
+        setReport(data);
+        toast.success('Report generated successfully');
+      } else {
+        console.warn('Invalid report data structure:', data);
+        setReport(data);
+      }
     } catch (error) {
       console.error('Error:', error);
       toast.error(error.message || 'Failed to load sales report');
+      setReport(null);
     } finally {
       setLoading(false);
     }
@@ -61,7 +74,7 @@ const AdminReports = () => {
 
   useEffect(() => {
     fetchSalesReport();
-  }, [dateRange]);
+  }, []); // Remove dateRange dependency to prevent auto-refresh
 
   const handleDateChange = (e) => {
     const { name, value } = e.target;
@@ -69,10 +82,23 @@ const AdminReports = () => {
   };
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'BDT'
-    }).format(value);
+    // Handle null, undefined, or non-numeric values
+    if (value === null || value === undefined || isNaN(value)) {
+      return '৳0.00';
+    }
+    
+    // Convert to number if it's a string
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    
+    // Format with Bangladeshi Taka symbol
+    return `৳${numValue.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  };
+
+  const handleGenerateReport = () => {
+    fetchSalesReport();
   };
 
   return (
@@ -112,14 +138,18 @@ const AdminReports = () => {
               />
             </div>
             <button
-              onClick={fetchSalesReport}
+              onClick={handleGenerateReport}
+              disabled={loading}
               className={`px-4 py-1 rounded flex items-center ${
-                darkMode 
-                  ? 'bg-indigo-600 hover:bg-indigo-700' 
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                loading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : darkMode 
+                    ? 'bg-indigo-600 hover:bg-indigo-700' 
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
               }`}
             >
-              <FiTrendingUp className="mr-2" /> Generate Report
+              <FiTrendingUp className="mr-2" /> 
+              {loading ? 'Generating...' : 'Generate Report'}
             </button>
           </div>
         </div>
@@ -130,6 +160,29 @@ const AdminReports = () => {
           </div>
         ) : report ? (
           <div className="space-y-8">
+            {/* Debug Info - Remove in production */}
+            {report?.debug && (
+              <div className={`p-4 rounded-lg mb-6 ${
+                darkMode ? 'bg-gray-700' : 'bg-yellow-50 border border-yellow-200'
+              }`}>
+                <h3 className="mb-2 font-semibold">Debug Information:</h3>
+                <div className="space-y-1 text-sm">
+                  <p><strong>Total Orders in DB:</strong> {report.debug.totalMatchingOrders}</p>
+                  <p><strong>Date Range:</strong> {dateRange.startDate} to {dateRange.endDate}</p>
+                  <p><strong>Sample Order Fields:</strong> {report.debug.sampleOrderFields?.join(', ')}</p>
+                  <p><strong>Sample Product Fields:</strong> {report.debug.sampleProductFields?.join(', ')}</p>
+                  <p><strong>Detected Total Sales:</strong> ৳{report.debug.detectedTotalSales}</p>
+                  <p><strong>Detected Avg Order Value:</strong> ৳{report.debug.detectedAverageOrderValue}</p>
+                  <details className="mt-2">
+                    <summary className="font-medium cursor-pointer">Raw Order Stats</summary>
+                    <pre className="p-2 mt-1 overflow-auto text-xs bg-gray-100 rounded dark:bg-gray-800">
+                      {JSON.stringify(report.debug.orderStatsMultiple, null, 2)}
+                    </pre>
+                  </details>
+                </div>
+              </div>
+            )}
+
             {/* Summary Cards */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
               <div className={`p-4 rounded-lg ${
@@ -137,12 +190,13 @@ const AdminReports = () => {
               }`}>
                 <div className="flex items-center">
                   <div className="p-3 text-indigo-600 bg-indigo-100 rounded-full dark:bg-indigo-900 dark:text-indigo-200">
-                    {/* <FiDollarSign size={24} /> */}
-                    ৳
+                    <FiDollarSign size={24} />
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold">Total Sales</h3>
-                    <p className="text-2xl font-bold">{formatCurrency(report.report.totalSales || 0)}</p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(report?.report?.totalSales || 0)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -156,7 +210,7 @@ const AdminReports = () => {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold">Total Orders</h3>
-                    <p className="text-2xl font-bold">{report.report.totalOrders || 0}</p>
+                    <p className="text-2xl font-bold">{report?.report?.totalOrders || 0}</p>
                   </div>
                 </div>
               </div>
@@ -170,7 +224,7 @@ const AdminReports = () => {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold">Items Sold</h3>
-                    <p className="text-2xl font-bold">{report.report.totalItemsSold || 0}</p>
+                    <p className="text-2xl font-bold">{report?.report?.totalItemsSold || 0}</p>
                   </div>
                 </div>
               </div>
@@ -184,7 +238,9 @@ const AdminReports = () => {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold">Avg. Order Value</h3>
-                    <p className="text-2xl font-bold">{formatCurrency(report.report.averageOrderValue || 0)}</p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(report?.report?.averageOrderValue || 0)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -202,7 +258,7 @@ const AdminReports = () => {
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={report.salesOverTime}
+                      data={report?.salesOverTime || []}
                       margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#4b5563' : '#e5e7eb'} />
@@ -234,7 +290,7 @@ const AdminReports = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={report.salesByCategory}
+                        data={report?.salesByCategory || []}
                         cx="50%"
                         cy="50%"
                         outerRadius={80}
@@ -243,7 +299,7 @@ const AdminReports = () => {
                         nameKey="_id"
                         label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                       >
-                        {report.salesByCategory.map((entry, index) => (
+                        {(report?.salesByCategory || []).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -285,7 +341,7 @@ const AdminReports = () => {
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${darkMode ? 'divide-gray-700 bg-gray-800' : 'divide-gray-200 bg-white'}`}>
-                    {report.topProducts.map((product, index) => (
+                    {(report?.topProducts || []).map((product, index) => (
                       <tr key={index} className={darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
                         <td className="px-6 py-4">
                           <div className="font-medium">
