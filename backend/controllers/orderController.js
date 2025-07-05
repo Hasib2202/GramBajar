@@ -429,7 +429,7 @@ export const processPayment = async (req, res) => {
     order.status = "Paid";
     await order.save();
 
-    // Prepare order data for email
+    // Prepare order data for email - ADD DISCOUNT FIELDS
     const emailOrderData = {
       _id: order._id,
       consumerId: {
@@ -442,7 +442,9 @@ export const processPayment = async (req, res) => {
           title: item.productId.title
         },
         quantity: item.quantity,
-        price: item.price // Ensure this is a number
+        price: item.price,
+        originalPrice: item.originalPrice,  // Add original price
+        discount: item.discount              // Add discount percentage
       })),
       totalAmount: order.totalAmount,
       status: order.status,
@@ -467,7 +469,6 @@ export const processPayment = async (req, res) => {
     });
   }
 };
-
 // Get order details
 export const getOrderDetails = async (req, res) => {
   try {

@@ -180,42 +180,50 @@ export const verificationTemplate = (verificationToken) => `
 // Order confirmation email
 export const sendOrderConfirmationEmail = async (email, order) => {
   try {
+    // Calculate subtotal and total discount
+    let subtotal = 0;
+    let totalDiscount = 0;
+    
     const itemsHtml = order.products.map(item => {
+      const price = Number(item.price);
       const originalPrice = Number(item.originalPrice);
-      const discountedPrice = Number(item.price);
-      const total = discountedPrice * item.quantity;
-      const discountPercentage = item.discount || 0;
+      const discount = item.discount || 0;
+      const itemTotal = price * item.quantity;
+      const itemDiscount = (originalPrice - price) * item.quantity;
+      
+      // Add to totals
+      subtotal += originalPrice * item.quantity;
+      totalDiscount += itemDiscount;
 
       return `
         <tr>
           <td style="padding: 8px; border-bottom: 1px solid #eee;">
             ${item.productId.title}
-            ${discountPercentage > 0 ?
-          `<br><span style="color: #e53935; font-size: 12px;">
-                ${discountPercentage}% OFF
-              </span>` : ''
-        }
+            ${discount > 0 ? `
+              <br><span style="color: #e53935; font-size: 12px;">
+                ${discount}% OFF
+              </span>
+            ` : ''}
           </td>
-          <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">
+            ${item.quantity}
+          </td>
           <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">
-            ${discountPercentage > 0 ? `
+            ${discount > 0 ? `
               <div style="text-decoration: line-through; color: #999; font-size: 12px;">
                 ৳${originalPrice.toFixed(2)}
               </div>
             ` : ''}
-            <div>৳${discountedPrice.toFixed(2)}</div>
+            <div>৳${price.toFixed(2)}</div>
           </td>
           <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">
-            ৳${total.toFixed(2)}
+            ৳${itemTotal.toFixed(2)}
           </td>
         </tr>
       `;
     }).join('');
 
     const totalAmount = Number(order.totalAmount);
-    const subtotal = order.products.reduce((sum, item) =>
-      sum + (Number(item.originalPrice) * item.quantity), 0);
-    const totalDiscount = subtotal - totalAmount;
 
     const mailOptions = {
       from: `GramBajar <${process.env.EMAIL_USER}>`,
@@ -262,7 +270,7 @@ export const sendOrderConfirmationEmail = async (email, order) => {
                   <span>-৳${totalDiscount.toFixed(2)}</span>
                 </div>
               ` : ''}
-              <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1em;">
+              <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1em; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
                 <span>Total:</span>
                 <span>৳${totalAmount.toFixed(2)}</span>
               </div>
