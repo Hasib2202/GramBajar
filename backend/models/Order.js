@@ -28,6 +28,18 @@ const orderSchema = new mongoose.Schema({
     price: {
       type: mongoose.Types.Decimal128,
       required: true
+    },
+    // Add discount field
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100
+    },
+    // Add original price field
+    originalPrice: {
+      type: mongoose.Types.Decimal128,
+      required: true
     }
   }],
   totalAmount: {
@@ -41,16 +53,16 @@ const orderSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true,
-  toJSON: {
-    transform: (doc, ret) => {
-      ret.totalAmount = parseFloat(ret.totalAmount.toString());
-      ret.products = ret.products.map(p => ({
-        ...p,
-        price: parseFloat(p.price.toString())
-      }));
-      return ret;
-    }
-  }
+  // toJSON: {
+  //   transform: (doc, ret) => {
+  //     ret.totalAmount = parseFloat(ret.totalAmount.toString());
+  //     ret.products = ret.products.map(p => ({
+  //       ...p,
+  //       price: parseFloat(p.price.toString())
+  //     }));
+  //     return ret;
+  //   }
+  // }
 });
 
 export default mongoose.model('Order', orderSchema);

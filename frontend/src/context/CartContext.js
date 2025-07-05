@@ -23,6 +23,12 @@ export const CartProvider = ({ children }) => {
   }, [cartItems]);
 
   const addToCart = (product) => {
+    // Calculate discountedPrice based on discount
+    const discount = product.discount || 0;
+    const discountedPrice = discount > 0
+      ? product.price * (1 - discount / 100)
+      : product.price;
+
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
 
@@ -38,7 +44,8 @@ export const CartProvider = ({ children }) => {
           name: product.name || 'Unknown Product',
           price: product.price,
           discount: product.discount || 0,
-          discountedPrice: product.discountedPrice || product.price,
+          discountedPrice: discountedPrice,
+          // discount: product.discount || 0,  // Discount percentage
           images: product.images || [],
           quantity: 1
         }];
@@ -92,7 +99,7 @@ export const CartProvider = ({ children }) => {
     Object.values(removeTimeoutRef.current).forEach(clearTimeout);
     removeTimeoutRef.current = {};
     isRemovingRef.current.clear();
-    
+
     setCartItems([]);
     toast.success('Cart cleared!', {
       toastId: 'cart-cleared'

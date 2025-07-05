@@ -37,7 +37,7 @@ const AdminOrders = () => {
         return;
       }
 
-      let url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders?page=${page}&limit=${limit}`;
+      let url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/admin?page=${page}&limit=${limit}`;
       if (search) url += `&search=${search}`;
       if (status) url += `&status=${status}`;
 
@@ -88,7 +88,7 @@ const AdminOrders = () => {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/${orderId}/status`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/admin${orderId}/status`,
         {
           method: 'PUT',
           headers: {
@@ -290,7 +290,7 @@ const AdminOrders = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                              ৳{order.totalAmount.toFixed(2)}
+                              {/* ৳{order.totalAmount.toFixed(2)} */}
                             </div>
                             <div className="text-sm text-gray-500">
                               {order.products.length} items

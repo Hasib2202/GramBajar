@@ -1,4 +1,3 @@
-// routes/orderRoutes.js
 import express from 'express';
 import {
   getOrders,
@@ -16,21 +15,12 @@ const router = express.Router();
 // User routes
 router.post('/', verifyUser, createOrder);
 router.post('/:id/pay', verifyUser, processPayment);
+router.get('/user/:id', verifyUser, getOrderDetails); // Changed to /user/:id
 
-// Admin routes
-router.get('/', verifyAdmin, getOrders);
-router.get('/:id', verifyAdmin, getOrderById);
-router.put('/:id/status', verifyAdmin, updateOrderStatus);
-router.get('/reports/sales', verifyAdmin, getSalesReport);
-
-// User routes
-// Create new order
-router.post('/', verifyUser, createOrder);
-
-// Process payment
-router.post('/:id/pay', verifyUser, processPayment);
-
-// Get order details - changed from :orderId to :id for consistency
-router.get('/:id', verifyUser, getOrderDetails);
+// Admin routes (prefixed with /admin)
+router.get('/admin', verifyAdmin, getOrders);
+router.get('/admin/:id', verifyAdmin, getOrderById);
+router.put('/admin/:id/status', verifyAdmin, updateOrderStatus);
+router.get('/admin/reports/sales', verifyAdmin, getSalesReport);
 
 export default router;

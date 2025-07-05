@@ -50,7 +50,7 @@
 //           -{product.discount}%
 //         </div>
 //       )}
-      
+
 //       <div className={`aspect-square flex items-center justify-center ${
 //         darkMode ? 'bg-gray-600' : 'bg-gray-100'
 //       }`}>
@@ -65,7 +65,7 @@
 //           <div className="text-6xl">📦</div>
 //         )}
 //       </div>
-      
+
 //       <div className="p-6">
 //         <div className="flex items-center justify-between mb-2">
 //           <span className={`text-sm px-2 py-1 rounded ${
@@ -82,11 +82,11 @@
 //             <FiHeart />
 //           </button>
 //         </div>
-        
+
 //         <h3 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
 //           {product.title || product.name}
 //         </h3>
-        
+
 //         <div className="flex items-center mb-3">
 //           <div className="flex items-center">
 //             {[...Array(5)].map((_, i) => (
@@ -99,7 +99,7 @@
 //             ({product.reviews || 0} reviews)
 //           </span>
 //         </div>
-        
+
 //         <div className="flex items-center justify-between">
 //           <div className="flex items-center space-x-2">
 //             <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -141,7 +141,7 @@
 //           -{product.discount}%
 //         </div>
 //       )}
-      
+
 //       <div className={`aspect-square flex items-center justify-center ${
 //         darkMode ? 'bg-gray-600' : 'bg-gray-100'
 //       }`}>
@@ -155,7 +155,7 @@
 //           <div className="text-6xl">📦</div>
 //         )}
 //       </div>
-      
+
 //       <div className="p-6">
 //         <div className="flex items-center justify-between mb-2">
 //           <span className={`text-sm px-2 py-1 rounded ${
@@ -169,11 +169,11 @@
 //             <FiHeart />
 //           </button>
 //         </div>
-        
+
 //         <h3 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
 //           {product.title}
 //         </h3>
-        
+
 //         <div className="flex items-center mb-3">
 //           <div className="flex items-center">
 //             {[...Array(5)].map((_, i) => (
@@ -186,7 +186,7 @@
 //             ({product.reviews || 0} reviews)
 //           </span>
 //         </div>
-        
+
 //         <div className="flex items-center justify-between">
 //           <div className="flex items-center space-x-2">
 //             <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -224,12 +224,12 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
   const { addToCart } = useCart();
 
   // Get the first image URL
-  const imageUrl = product.images && product.images.length > 0 
-    ? product.images[0] 
+  const imageUrl = product.images && product.images.length > 0
+    ? product.images[0]
     : null;
 
   // Calculate discount price
-  const discountPrice = product.discount > 0 
+  const discountPrice = product.discount > 0
     ? product.price * (1 - product.discount / 100)
     : product.price;
 
@@ -241,13 +241,22 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
     setIsWishlisted(!isWishlisted);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+
+    // Calculate discountedPrice
+    const discount = product.discount || 0;
+    const discountedPrice = discount > 0
+      ? product.price * (1 - discount / 100)
+      : product.price;
+      
     addToCart({
       id: product._id,
       name: product.title,
       price: product.price,
-      discount: product.discount || product.price,
-      discountedPrice: discountPrice,
+      discount: discount,  // Pass discount value
+      // discount: product.discount || product.price,
+      discountedPrice: discountedPrice,
       images: product.images || []
     });
   };
@@ -258,15 +267,13 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
 
   if (viewMode === 'list') {
     return (
-      <div className={`flex gap-4 p-4 rounded-lg border transition-all hover:shadow-lg ${
-        darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-      }`}>
+      <div className={`flex gap-4 p-4 rounded-lg border transition-all hover:shadow-lg ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+        }`}>
         {/* Product Image */}
         <div className="flex-shrink-0 w-32 h-32">
           {imageError || !imageUrl ? (
-            <div className={`w-full h-full rounded-lg flex items-center justify-center text-4xl ${
-              darkMode ? 'bg-gray-700' : 'bg-gray-100'
-            }`}>
+            <div className={`w-full h-full rounded-lg flex items-center justify-center text-4xl ${darkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
               📦
             </div>
           ) : (
@@ -295,11 +302,10 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
             </div>
 
             {/* Stock Status */}
-            <span className={`text-sm px-2 py-1 rounded ${
-              product.stock > 0
-                ? 'bg-green-100 text-green-800' 
+            <span className={`text-sm px-2 py-1 rounded ${product.stock > 0
+                ? 'bg-green-100 text-green-800'
                 : 'bg-red-100 text-red-800'
-            }`}>
+              }`}>
               {product.stock > 0 ? `In Stock (${product.stock})` : 'Out of Stock'}
             </span>
 
@@ -339,20 +345,18 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
             <div className="flex items-center gap-2">
               <button
                 onClick={viewProduct}
-                className={`p-2 rounded-lg transition-colors ${
-                  darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                }`}
+                className={`p-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                  }`}
               >
                 <FiEye />
               </button>
               <button
                 onClick={handleAddToCart}
                 disabled={product.stock <= 0}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  product.stock > 0
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${product.stock > 0
                     ? 'bg-green-500 hover:bg-green-600 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <FiShoppingCart /> {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
               </button>
@@ -365,9 +369,8 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
 
   // Grid view
   return (
-    <div className={`rounded-lg border overflow-hidden transition-all hover:shadow-lg hover:scale-105 relative ${
-      darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-    }`}>
+    <div className={`rounded-lg border overflow-hidden transition-all hover:shadow-lg hover:scale-105 relative ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+      }`}>
       {/* Discount Badge */}
       {product.discount > 0 && (
         <div className="absolute z-10 px-2 py-1 text-xs font-bold text-white bg-red-500 rounded top-2 left-2">
@@ -378,9 +381,8 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
       {/* Wishlist Button */}
       <button
         onClick={toggleWishlist}
-        className={`absolute top-2 right-2 z-10 p-2 rounded-full backdrop-blur-sm ${
-          isWishlisted ? 'text-red-500 bg-white/20' : 'text-gray-400 bg-white/20'
-        } hover:text-red-500 transition-colors`}
+        className={`absolute top-2 right-2 z-10 p-2 rounded-full backdrop-blur-sm ${isWishlisted ? 'text-red-500 bg-white/20' : 'text-gray-400 bg-white/20'
+          } hover:text-red-500 transition-colors`}
       >
         <FiHeart />
       </button>
@@ -388,9 +390,8 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
       {/* Product Image */}
       <div className="relative overflow-hidden aspect-square">
         {imageError || !imageUrl ? (
-          <div className={`w-full h-full flex items-center justify-center text-6xl ${
-            darkMode ? 'bg-gray-700' : 'bg-gray-100'
-          }`}>
+          <div className={`w-full h-full flex items-center justify-center text-6xl ${darkMode ? 'bg-gray-700' : 'bg-gray-100'
+            }`}>
             📦
           </div>
         ) : (
@@ -413,11 +414,10 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
           <button
             onClick={handleAddToCart}
             disabled={product.stock <= 0}
-            className={`p-2 rounded-full backdrop-blur-sm ${
-              product.stock > 0
+            className={`p-2 rounded-full backdrop-blur-sm ${product.stock > 0
                 ? 'bg-green-500 hover:bg-green-600 text-white'
                 : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-            }`}
+              }`}
           >
             <FiShoppingCart />
           </button>
@@ -428,11 +428,10 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
       <div className="p-4">
         {/* Stock Status */}
         <div className="flex items-center justify-between mb-2">
-          <span className={`text-xs px-2 py-1 rounded ${
-            product.stock > 0
+          <span className={`text-xs px-2 py-1 rounded ${product.stock > 0
               ? 'bg-green-100 text-green-800'
               : 'bg-red-100 text-red-800'
-          }`}>
+            }`}>
             {product.stock > 0 ? `In Stock (${product.stock})` : 'Out of Stock'}
           </span>
         </div>
@@ -474,11 +473,10 @@ export default function ProductCard({ product, darkMode, viewMode = 'grid' }) {
         <button
           onClick={handleAddToCart}
           disabled={product.stock <= 0}
-          className={`w-full mt-3 py-2 px-4 rounded-lg font-medium transition-colors ${
-            product.stock > 0
+          className={`w-full mt-3 py-2 px-4 rounded-lg font-medium transition-colors ${product.stock > 0
               ? 'bg-green-500 hover:bg-green-600 text-white'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
+            }`}
         >
           {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
         </button>

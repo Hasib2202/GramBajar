@@ -36,7 +36,7 @@ const AdminReports = () => {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/reports/sales?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/orders/admin/reports/sales?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`,
         {
           headers: {
             Authorization: `Bearer ${token}`

@@ -23,7 +23,7 @@ const OrderConfirmation = () => {
         }
 
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/${orderId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/user/${orderId}`,
           { headers: { 'Authorization': `Bearer ${user.token}` } }
         );
 
@@ -95,27 +95,48 @@ const OrderConfirmation = () => {
         <div className="p-6 bg-white rounded-lg shadow">
           <h2 className="mb-4 text-xl font-semibold">Order Summary</h2>
           <div className="space-y-4">
-            {order.products.map((item, index) => (
-              <div key={index} className="flex items-start pb-4 border-b">
-                {item.productId?.images?.[0] && (
-                  <div className="mr-4">
-                    <Image
-                      src={item.productId.images[0]}
-                      alt={item.productId.title}
-                      width={80}
-                      height={80}
-                      className="object-cover rounded"
-                    />
+            {order.products.map((item, index) => {
+              const product = item.productId || {};
+              const hasDiscount = item.discount > 0;
+              return (
+                <div key={index} className="flex items-start pb-4 border-b">
+                  {product.images?.[0] ? (
+                    <div className="mr-4">
+                      <Image
+                        src={product.images[0]}
+                        alt={product.title || 'Product Image'}
+                        width={80}
+                        height={80}
+                        className="object-cover rounded"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 mr-4 bg-gray-200 border-2 border-dashed rounded" />
+                  )}
+                  <div className="flex-1">
+                    <p className="font-medium">{product.title || 'Product unavailable'}</p>
+                    <p className="text-gray-600">Quantity: {item.quantity}</p>
+                    {hasDiscount && (
+                      <div className="flex items-center mt-1">
+                        <p className="mr-2 text-gray-600 line-through">
+                          ৳{item.originalPrice.toFixed(2)}
+                        </p>
+                        <span className="px-2 py-1 text-xs text-red-800 bg-red-100 rounded">
+                          {item.discount}% OFF
+                        </span>
+                      </div>
+                    )}
+                    <p className="text-gray-600">
+                      {hasDiscount ? 'Original Price: ' : 'Price: '}
+                      <span className={`${hasDiscount ? 'text-green-600 font-medium' : ''}`}>
+                        ৳{item.price.toFixed(2)}
+                      </span>
+                    </p>
                   </div>
-                )}
-                <div className="flex-1">
-                  <p className="font-medium">{item.productId?.title || 'Product'}</p>
-                  <p className="text-gray-600">Quantity: {item.quantity}</p>
-                  <p className="text-gray-600">Price: ৳{item.price.toFixed(2)}</p>
+                  <div className="font-medium">৳{(item.price * item.quantity).toFixed(2)}</div>
                 </div>
-                <div className="font-medium">৳{(item.price * item.quantity).toFixed(2)}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="flex justify-between pt-4 mt-4 text-lg font-bold border-t">
             <span>Total:</span>
@@ -133,13 +154,18 @@ const OrderConfirmation = () => {
             <p>
               <strong>Status:</strong>
               <span className={`ml-2 px-3 py-1 text-sm rounded-full ${order.status === 'Paid' ? 'bg-green-100 text-green-800' :
+                order.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
                   'bg-yellow-100 text-yellow-800'
                 }`}>
                 {order.status}
               </span>
             </p>
             <p className="pt-3 mt-3 text-sm text-gray-600 border-t">
-              Ordered on: {new Date(order.createdAt).toLocaleDateString()}
+              Ordered on: {new Date(order.createdAt).toLocaleDateString('en-BD', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
             </p>
           </div>
         </div>

@@ -58,7 +58,9 @@ const Checkout = () => {
         products: cartItems.map(item => ({
           productId: item.id,  // Use id property from cart item
           quantity: item.quantity,
-          price: item.price
+          originalPrice: item.price,  
+          price: item.price,
+          discount: item.discount   
         })),
         totalAmount: cartTotal
       };

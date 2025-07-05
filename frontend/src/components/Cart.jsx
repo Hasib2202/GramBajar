@@ -152,8 +152,8 @@ export default function Cart({ isOpen, setIsOpen }) {
                 <button
                   onClick={() => setIsOpen(false)}
                   className={`px-6 py-2 rounded-lg font-medium ${darkMode
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-green-500 hover:bg-green-600 text-white'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-green-500 hover:bg-green-600 text-white'
                     }`}
                 >
                   Continue Shopping
@@ -190,6 +190,7 @@ export default function Cart({ isOpen, setIsOpen }) {
                                 {item.name}
                               </h3>
                               <div className="mt-1">
+                                {/* Only show discount if discount > 0 */}
                                 {item.discount > 0 ? (
                                   <>
                                     <span className={`text-sm mr-2 ${darkMode ? 'text-gray-300' : 'text-gray-500'} line-through`}>
@@ -203,9 +204,9 @@ export default function Cart({ isOpen, setIsOpen }) {
                                   <span>৳ {item.price.toFixed(2)}</span>
                                 )}
                               </div>
+                              {/* Only show badge if discount > 0 */}
                               {item.discount > 0 && (
-                                <span className={`text-xs px-2 py-1 mt-1 rounded ${darkMode ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
-                                  }`}>
+                                <span className={`text-xs px-2 py-1 mt-1 rounded ${darkMode ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'}`}>
                                   {item.discount}% OFF
                                 </span>
                               )}
@@ -268,8 +269,8 @@ export default function Cart({ isOpen, setIsOpen }) {
                 <button
                   onClick={clearCart}
                   className={`flex-1 py-3 rounded-lg font-medium ${darkMode
-                      ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                      : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
                     }`}
                 >
                   Clear Cart
@@ -278,8 +279,8 @@ export default function Cart({ isOpen, setIsOpen }) {
                   onClick={handleCheckout}
                   disabled={isRedirecting}
                   className={`flex-1 py-3 rounded-lg font-medium flex items-center justify-center ${darkMode
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-green-500 hover:bg-green-600 text-white'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-green-500 hover:bg-green-600 text-white'
                     } ${isRedirecting ? 'opacity-75' : ''}`}
                 >
                   {isRedirecting ? (

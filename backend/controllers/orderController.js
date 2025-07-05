@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { sendOrderConfirmationEmail } from "../utils/emailSender.js";
+import { safeConvertDecimal } from "../utils/convertUtils.js";
 
 // Get all orders
 export const getOrders = async (req, res) => {
@@ -362,8 +363,8 @@ export const createOrder = async (req, res) => {
       products: products.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
-        price: item.price,
         originalPrice: item.price, // Store original price
+        price: item.price,
         discount: item.discount || 0 // Store discount percentage
       })),
       totalAmount,
@@ -470,8 +471,9 @@ export const processPayment = async (req, res) => {
 // Get order details
 export const getOrderDetails = async (req, res) => {
   try {
-    const orderId = req.params.id; // Changed from orderId to id
+    const orderId = req.params.id;
     
+    // Validate order ID format
     if (!mongoose.Types.ObjectId.isValid(orderId)) {
       return res.status(400).json({
         success: false,
@@ -490,20 +492,54 @@ export const getOrderDetails = async (req, res) => {
       });
     }
 
-    // Only allow the order owner to view
-    if (order.consumerId._id.toString() !== req.user._id) {
+    // Debug: Log order structure
+    console.log('Order consumer:', order.consumerId);
+    console.log('Order totalAmount type:', typeof order.totalAmount);
+
+    // Handle missing consumer safely
+    const consumerId = order.consumerId?._id?.toString();
+    if (!consumerId || consumerId !== req.user._id) {
       return res.status(403).json({
         success: false,
         message: 'You can only view your own orders'
       });
     }
 
+    // Convert to plain JS object with safe conversions
+    const formattedOrder = {
+      _id: order._id,
+      contact: order.contact,
+      address: order.address,
+      status: order.status,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      totalAmount: safeConvertDecimal(order.totalAmount),
+      consumerId: {
+        _id: order.consumerId._id,
+        name: order.consumerId.name,
+        email: order.consumerId.email
+      },
+      products: order.products.map(item => ({
+        _id: item._id,
+        quantity: item.quantity,
+        originalPrice: safeConvertDecimal(item.originalPrice),  // Add this
+        price: safeConvertDecimal(item.price),
+        discount: item.discount,  // Add this
+        productId: item.productId ? {
+          _id: item.productId._id,
+          title: item.productId.title,
+          images: item.productId.images
+        } : null
+      }))
+    };
+
     res.json({
       success: true,
-      order
+      order: formattedOrder
     });
 
   } catch (error) {
+    console.error('Order details error:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch order details',

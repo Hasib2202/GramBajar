@@ -1,9 +1,25 @@
-// next.config.js
-const path = require('path'); // Add this import at the top
+const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  
+  // Add this images configuration
+  images: {
+    domains: [
+      'res.cloudinary.com',       // Cloudinary images
+      'localhost',                // Local development
+      'your-production-domain.com' // Your production domain
+    ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/dksekryws/image/upload/**',
+      },
+    ],
+  },
+
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
