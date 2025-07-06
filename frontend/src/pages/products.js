@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
 import FilterSidebar from '../components/FilterSidebar';
+import { toast } from 'react-toastify';
 
 // Icons
 const FiSearch = () => <span>🔍</span>;
@@ -38,47 +39,68 @@ export default function ProductsPage() {
 
   const itemsPerPage = 12;
 
+  // useEffect(() => {
+  //   const verifyAuth = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/verify`,
+  //         {
+  //           method: 'GET',
+  //           credentials: 'include'
+  //         }
+  //       );
+
+  //       if (response.ok) {
+  //         setIsAuthenticated(true);
+
+  //         // Load products if authenticated
+  //         const isDark = false;
+  //         setDarkMode(isDark);
+  //         document.documentElement.classList.toggle('dark', isDark);
+
+  //         if (router.query.category) {
+  //           setSelectedCategory(router.query.category);
+  //         }
+
+  //         fetchCategories();
+  //       } else {
+  //         toast.error('Please login to view products');
+  //         router.push('/login');
+  //       }
+  //     } catch (error) {
+  //       console.error('Authentication error:', error);
+  //       toast.error('Authentication service unavailable');
+  //       router.push('/');
+  //     }
+  //   };
+
+  //   verifyAuth();
+  // }, [router.query.category]);
+  // useEffect(() => {
+  //   fetchProducts();
+  // }, [searchQuery, selectedCategory, priceRange, sortBy, currentPage]);
+
+  
+  // Load initial data (categories + theme)
   useEffect(() => {
-    const verifyAuth = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/verify`,
-          {
-            method: 'GET',
-            credentials: 'include'
-          }
-        );
+    // Toggle theme based on saved preference or default
+    const savedDark = false; // Replace with logic if persisted
+    setDarkMode(savedDark);
+    document.documentElement.classList.toggle('dark', savedDark);
 
-        if (response.ok) {
-          setIsAuthenticated(true);
+    // If category query param exists
+    if (router.query.category) {
+      setSelectedCategory(router.query.category);
+    }
 
-          // Load products if authenticated
-          const isDark = false;
-          setDarkMode(isDark);
-          document.documentElement.classList.toggle('dark', isDark);
-
-          if (router.query.category) {
-            setSelectedCategory(router.query.category);
-          }
-
-          fetchCategories();
-        } else {
-          toast.error('Please login to view products');
-          router.push('/login');
-        }
-      } catch (error) {
-        console.error('Authentication error:', error);
-        toast.error('Authentication service unavailable');
-        router.push('/');
-      }
-    };
-
-    verifyAuth();
+    fetchCategories();
   }, [router.query.category]);
+
+  // Fetch products when filters change
   useEffect(() => {
     fetchProducts();
   }, [searchQuery, selectedCategory, priceRange, sortBy, currentPage]);
-
+  
   const fetchCategories = async () => {
     try {
       const response = await fetch(

@@ -40,7 +40,7 @@ export default function ImageCarousel({ darkMode = false }) {
   const images = [
     { 
       id: 1, 
-      src: '/images/veg.jpg', 
+      src: '/images/freshfish.jpg', 
       alt: 'Fresh Fish', 
       title: 'Fresh Fish', 
       description: 'Ocean fresh, daily catch',
@@ -58,7 +58,7 @@ export default function ImageCarousel({ darkMode = false }) {
     },
     { 
       id: 3, 
-      src: '/images/veg3.jpg', 
+      src: '/images/freshveg.jpg', 
       alt: 'Fresh Vegetables', 
       title: 'Fresh Vegetables', 
       description: 'Garden fresh, pesticide free',
@@ -67,7 +67,7 @@ export default function ImageCarousel({ darkMode = false }) {
     },
     { 
       id: 4, 
-      src: '/images/veg4.jpg', 
+      src: '/images/PremiumMeat.jpg', 
       alt: 'Premium Meat', 
       title: 'Premium Meat', 
       description: 'High quality, ethically sourced',
@@ -76,7 +76,7 @@ export default function ImageCarousel({ darkMode = false }) {
     },
     { 
       id: 5, 
-      src: '/images/veg5.jpg', 
+      src: '/images/Dairy.jpg', 
       alt: 'Dairy Products', 
       title: 'Dairy Products', 
       description: 'Fresh milk, eggs & more',
@@ -85,7 +85,7 @@ export default function ImageCarousel({ darkMode = false }) {
     },
     { 
       id: 6, 
-      src: '/images/veg6.jpg', 
+      src: '/images/cooking.jpg', 
       alt: 'Cooking Essentials', 
       title: 'Cooking Essentials', 
       description: 'All your kitchen needs',
