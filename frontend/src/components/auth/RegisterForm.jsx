@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, Chrome, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import Head from 'next/head';
+// import { useTheme } from '@/context/ThemeContext';
+
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -15,19 +18,28 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [registrationComplete, setRegistrationComplete] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  // const [darkMode, setDarkMode] = useState(false);
+  // const { darkMode } = useTheme();
 
-  useEffect(() => {
-    const isDark = false;
-    setDarkMode(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
 
-  const toggleTheme = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    document.documentElement.classList.toggle('dark', newMode);
-  };
+  // useEffect(() => {
+  //   const isDark = false;
+  //   setDarkMode(isDark);
+  //   document.documentElement.classList.toggle('dark', isDark);
+  // }, []);
+
+  // const toggleTheme = () => {
+  //   const newMode = !darkMode;
+  //   setDarkMode(newMode);
+  //   document.documentElement.classList.toggle('dark', newMode);
+  // };
+
+  //  const toggleTheme = () => {
+  //   const newMode = !darkMode;
+  //   setDarkMode(newMode);
+  //   // Remove localStorage usage
+  //   document.documentElement.classList.toggle('dark', newMode);
+  // };
 
   const handleChange = (e) => {
     setFormData({
@@ -38,37 +50,37 @@ const RegisterPage = () => {
   };
 
   const validateForm = () => {
-  const { name, email, password, confirmPassword } = formData;
+    const { name, email, password, confirmPassword } = formData;
 
-  // Check for empty fields
-  if (!name || !email || !password || !confirmPassword) {
-    setError('All fields are required');
-    return false;
-  }
+    // Check for empty fields
+    if (!name || !email || !password || !confirmPassword) {
+      setError('All fields are required');
+      return false;
+    }
 
-  // Email format check (basic)
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    setError('Please enter a valid email address');
-    return false;
-  }
+    // Email format check (basic)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
 
-  // Password length check
-  if (password.length < 8) {
-    setError('Password must be at least 8 characters long');
-    return false;
-  }
+    // Password length check
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return false;
+    }
 
-  // Confirm password match
-  if (password !== confirmPassword) {
-    setError('Passwords do not match');
-    return false;
-  }
+    // Confirm password match
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return false;
+    }
 
-  // Clear any previous errors
-  setError('');
-  return true;
-};
+    // Clear any previous errors
+    setError('');
+    return true;
+  };
 
 
   const handleSubmit = async (e) => {
@@ -78,16 +90,16 @@ const RegisterPage = () => {
 
     // if (!validateForm()) return;
     if (!validateForm()) {
-    setLoading(false);
-    return;
-  }
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError('');
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/register`, 
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/register`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -95,8 +107,8 @@ const RegisterPage = () => {
             name: formData.name,
             email: formData.email,
             password: formData.password
-        }),
-      });
+          }),
+        });
 
       const data = await response.json();
 
@@ -134,6 +146,7 @@ const RegisterPage = () => {
   if (registrationComplete) {
     return (
       <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-green-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900">
+
         <div className="w-full max-w-md">
           <div className="p-8 text-center bg-white border border-gray-100 shadow-xl rounded-2xl dark:bg-gray-900 dark:border-gray-800">
             <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-green-100 rounded-full">
@@ -166,7 +179,10 @@ const RegisterPage = () => {
   return (
     <div className="relative flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900">
       {/* Toggle Button */}
-
+      <Head>
+        <title>Sign up - GramBajar | Fresh Groceries Online</title>
+        <meta name="description" content="Learn about GramBajar's mission to deliver fresh groceries directly from farms to your doorstep." />
+      </Head>
 
       <div className="w-full max-w-md">
 

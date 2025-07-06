@@ -15,15 +15,17 @@ const FiList = () => <span>☰</span>;
 const FiX = () => <span>✕</span>;
 const FiChevronLeft = () => <span>‹</span>;
 const FiChevronRight = () => <span>›</span>;
+import { useTheme } from '@/context/ThemeContext';
 
 export default function ProductsPage() {
   const router = useRouter();
-  const [darkMode, setDarkMode] = useState(false);
+  // const [darkMode, setDarkMode] = useState(false);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
+  const { darkMode } = useTheme();
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,9 +86,9 @@ export default function ProductsPage() {
   // Load initial data (categories + theme)
   useEffect(() => {
     // Toggle theme based on saved preference or default
-    const savedDark = false; // Replace with logic if persisted
-    setDarkMode(savedDark);
-    document.documentElement.classList.toggle('dark', savedDark);
+    // const savedDark = false; // Replace with logic if persisted
+    // setDarkMode(savedDark);
+    // document.documentElement.classList.toggle('dark', savedDark);
 
     // If category query param exists
     if (router.query.category) {

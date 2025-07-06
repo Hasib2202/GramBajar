@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Eye, EyeOff, Mail, Lock, Chrome } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import Head from 'next/head';
 
 const LoginForm = () => {
   const router = useRouter();
@@ -112,6 +113,10 @@ const LoginForm = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-black">
+      <Head>
+        <title>Sign in - GramBajar | Fresh Groceries Online</title>
+        <meta name="description" content="Learn about GramBajar's mission to deliver fresh groceries directly from farms to your doorstep." />
+      </Head>
       <div className="relative w-full max-w-md">
         <div className="p-8 bg-white border border-gray-100 shadow-xl rounded-2xl dark:bg-gray-900 dark:border-gray-700">
           {/* Header */}

@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ImageCarousel from '../components/ImageCarousel';
 import ProductCard from '../components/ProductCard'; // New component for product cards
+import { useTheme } from '@/context/ThemeContext';
 
 // Simple icon components
 const FiLeaf = () => <span>🌱</span>;
@@ -17,12 +18,13 @@ const FiHeart = () => <span>❤️</span>;
 const FiArrowLeft = () => <span>←</span>;
 
 export default function Home() {
-  const [darkMode, setDarkMode] = useState(false);
+  // const [darkMode, setDarkMode] = useState(false);
   const [categories, setCategories] = useState([]);
   const [latestProducts, setLatestProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const { darkMode } = useTheme();
 
   // Category pagination state
   const [categoriesCurrentPage, setCategoriesCurrentPage] = useState(1);
@@ -30,9 +32,9 @@ export default function Home() {
   const [categoriesTotalPages, setCategoriesTotalPages] = useState(1);
 
   useEffect(() => {
-    const isDark = false;
-    setDarkMode(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
+    // const isDark = false;
+    // setDarkMode(isDark);
+    // document.documentElement.classList.toggle('dark', isDark);
 
     // Fetch data from APIs
     fetchCategories();

@@ -6,6 +6,7 @@ import Footer from '../../components/Footer';
 import ImageGallery from '../../components/ImageGallery';
 import { useCart } from '@/src/context/CartContext';
 import { toast } from 'react-toastify';
+import { useTheme } from '@/context/ThemeContext';
 
 // Icons
 const FiShoppingCart = () => <span>🛒</span>;
@@ -15,7 +16,7 @@ const FiStar = () => <span>⭐</span>;
 export default function ProductDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const [darkMode, setDarkMode] = useState(false);
+  // const [darkMode, setDarkMode] = useState(false);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -23,12 +24,14 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const { addToCart } = useCart();
+  const { darkMode } = useTheme();
+  // const { darkMode, toggleTheme } = useTheme();
 
-  useEffect(() => {
-    const isDark = false;
-    setDarkMode(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
+  // useEffect(() => {
+  //   const isDark = false;
+  //   setDarkMode(isDark);
+  //   document.documentElement.classList.toggle('dark', isDark);
+  // }, []);
 
   useEffect(() => {
     if (id) {

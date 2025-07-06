@@ -4,16 +4,18 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function CategoriesPage() {
     const router = useRouter();
-    const [darkMode, setDarkMode] = useState(false);
+    // const [darkMode, setDarkMode] = useState(false);
     const [categories, setCategories] = useState([]);
     const [filteredCategories, setFilteredCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 4;
+    const { darkMode } = useTheme();
 
     // Sample categories data - in a real app, this would come from an API
     const sampleCategories = [

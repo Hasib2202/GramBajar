@@ -2,16 +2,20 @@ import LoginForm from '@/components/auth/LoginForm';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useState, useEffect } from 'react';
+import { useTheme } from '@/context/ThemeContext';
+
 
 
 export default function LoginPage() {
-  const [darkMode, setDarkMode] = useState(false);
+  // const [darkMode, setDarkMode] = useState(false);
+    const { darkMode } = useTheme();
+
 
   useEffect(() => {
     // Remove localStorage usage
-    const isDark = false; // Default to light mode
-    setDarkMode(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
+    // const isDark = false; // Default to light mode
+    // setDarkMode(isDark);
+    // document.documentElement.classList.toggle('dark', isDark);
   }, []);
 
   const toggleTheme = () => {

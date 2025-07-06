@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { useTheme } from '@/context/ThemeContext';
 
 // Icons
 const FiChevronDown = () => <span>⌄</span>;
@@ -14,15 +15,23 @@ const FiPhone = () => <span>📞</span>;
 const FiSearch = () => <span>🔍</span>;
 
 export default function FAQsPage() {
-  const [darkMode, setDarkMode] = useState(false);
+  // const [darkMode, setDarkMode] = useState(false);
   const [openItems, setOpenItems] = useState(new Set([0])); // First item open by default
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    const isDark = false;
-    setDarkMode(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
+  const { darkMode } = useTheme();
+
+  // useEffect(() => {
+  //   const isDark = false;
+  //   setDarkMode(isDark);
+  //   document.documentElement.classList.toggle('dark', isDark);
+  // }, []);
+
+  // const toggleTheme = () => {
+  //   const newMode = !darkMode;
+  //   setDarkMode(newMode);
+  //   document.documentElement.classList.toggle('dark', newMode);
+  // };
 
   const toggleTheme = () => {
     const newMode = !darkMode;

@@ -4,9 +4,11 @@ import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Image from 'next/image';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function AboutPage() {
-  const [darkMode, setDarkMode] = useState(false);
+  // const [darkMode, setDarkMode] = useState(false);
+  const { darkMode } = useTheme();
 
   // no webpack import needed for public/, just use relative URLs:
   const img1 = '/images/veg.jpg';
