@@ -149,23 +149,27 @@ export default function CategoriesPage() {
             <Navbar darkMode={darkMode} toggleTheme={toggleTheme} />
 
             {/* Hero Section */}
-            <section className={`py-16 px-4 text-white ${darkMode
-                ? 'bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-900'
-                : 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                }`}>
-                <div className="mx-auto text-center max-w-7xl">
-                    <h1 className="mb-6 text-3xl font-bold md:text-4xl">Browse Our Categories</h1>
-                    <p className="max-w-3xl mx-auto text-lg">
+            <section
+                className={`
+    relative overflow-hidden py-16 px-4 text-white
+    ${darkMode
+                        ? 'bg-gradient-to-br from-emerald-900 via-teal-800 to-green-900'
+                        : 'bg-gradient-to-br from-green-400 via-green-500 to-green-600'}
+  `}
+            >
+                {/* Subtle overlay circles for depth */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-0 -translate-x-1/2 rounded-full left-1/2 w-80 h-80 bg-white/10 blur-2xl"></div>
+                    <div className="absolute bottom-0 rounded-full right-1/3 w-96 h-96 bg-white/5 blur-3xl"></div>
+                </div>
+
+                <div className="relative mx-auto text-center max-w-7xl">
+                    <h1 className="mb-6 text-3xl font-extrabold md:text-5xl">
+                        Browse Our Categories
+                    </h1>
+                    <p className="max-w-3xl mx-auto text-lg opacity-90">
                         Explore our carefully curated selection of fresh grocery categories
                     </p>
-
-                    {/* Floating elements for depth */}
-                    {darkMode && (
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                            <div className="absolute rounded-full top-1/4 left-1/4 w-80 h-80 bg-emerald-800/30 blur-3xl animate-pulse"></div>
-                            <div className="absolute w-64 h-64 rounded-full bottom-1/3 right-1/3 bg-teal-800/30 blur-3xl animate-pulse"></div>
-                        </div>
-                    )}
                 </div>
             </section>
 
@@ -347,29 +351,38 @@ export default function CategoriesPage() {
             </section>
 
             {/* CTA Section */}
-            <section className={`py-16 px-4 text-white ${darkMode
-                ? 'bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-900'
-                : 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                }`}>
+            <section
+                className={`
+    relative overflow-hidden py-16 px-4 text-white
+    ${darkMode
+                        ? 'bg-gradient-to-tr from-teal-900 via-emerald-800 to-green-900'
+                        : 'bg-gradient-to-tr from-green-500 via-green-600 to-emerald-500'}
+  `}
+            >
+                {/* Subtle overlay shapes */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute rounded-full top-1/4 right-1/4 w-72 h-72 bg-white/10 blur-2xl"></div>
+                    <div className="absolute w-64 h-64 rounded-full bottom-1/3 left-1/3 bg-white/5 blur-3xl"></div>
+                </div>
+
                 <div className="relative z-10 max-w-4xl mx-auto text-center">
-                    <h2 className="mb-6 text-3xl font-bold">Can't find what you're looking for?</h2>
-                    <p className="max-w-2xl mx-auto mb-10">
+                    <h2 className="mb-6 text-3xl font-extrabold">
+                        Can't find what you're looking for?
+                    </h2>
+                    <p className="max-w-2xl mx-auto mb-10 opacity-90">
                         Contact our support team for assistance with special orders or product requests.
                     </p>
-                    <button className={`px-8 py-4 font-bold transition-all rounded-lg shadow-lg ${darkMode
-                        ? 'bg-gray-900 text-white hover:bg-gray-800 border border-emerald-700'
-                        : 'bg-white text-emerald-600 hover:bg-emerald-50'
-                        }`}>
+                    <button
+                        className={`
+        px-8 py-4 font-bold rounded-lg transition-transform duration-200
+        ${darkMode
+                                ? 'bg-green-700 hover:bg-green-600 border-2 border-green-500'
+                                : 'bg-white text-green-700 hover:bg-green-50 border-2 border-green-100'}
+        transform hover:scale-105
+      `}
+                    >
                         Contact Support
                     </button>
-
-                    {/* Floating elements for depth */}
-                    {darkMode && (
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                            <div className="absolute rounded-full top-1/3 left-1/3 w-72 h-72 bg-emerald-800/20 blur-3xl animate-pulse"></div>
-                            <div className="absolute w-64 h-64 rounded-full bottom-1/4 right-1/4 bg-teal-800/20 blur-3xl animate-pulse"></div>
-                        </div>
-                    )}
                 </div>
             </section>
 
