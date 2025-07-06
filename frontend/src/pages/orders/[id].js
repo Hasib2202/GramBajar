@@ -45,7 +45,12 @@ const OrderDetailsPage = () => {
         }
 
         const data = await response.json();
-        setOrder(data);
+        // Handle the API response structure - extract the order from the response
+        if (data.success && data.order) {
+          setOrder(data.order);
+        } else {
+          throw new Error("Invalid response format");
+        }
       } catch (err) {
         setError(err.message || "Failed to load order details");
       } finally {
@@ -59,7 +64,7 @@ const OrderDetailsPage = () => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "INR",
+      currency: "BDT",
     }).format(amount);
   };
 
@@ -76,12 +81,33 @@ const OrderDetailsPage = () => {
   const getStatusIcon = (status) => {
     switch (status.toLowerCase()) {
       case "completed":
+      case "paid":
         return <FiCheck className="text-green-500" />;
       case "cancelled":
         return <FiX className="text-red-500" />;
       default:
         return <FiClock className="text-yellow-500" />;
     }
+  };
+
+  // Helper function to safely get price value
+  const getPrice = (priceObj) => {
+    if (typeof priceObj === 'number') return priceObj;
+    if (priceObj && priceObj.$numberDecimal) return parseFloat(priceObj.$numberDecimal);
+    return 0;
+  };
+
+  // Helper function to get the actual item price (fallback to product price if item price is 0)
+  const getItemPrice = (item) => {
+    const itemPrice = getPrice(item.price);
+    if (itemPrice > 0) return itemPrice;
+    
+    // Fallback to product price if item price is 0
+    if (item.productId && item.productId.price) {
+      return getPrice(item.productId.price);
+    }
+    
+    return 0;
   };
 
   if (loading) {
@@ -114,7 +140,7 @@ const OrderDetailsPage = () => {
     );
   }
 
-  if (!order) {
+  if (!order || !order._id) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="p-6 text-center">
@@ -165,7 +191,7 @@ const OrderDetailsPage = () => {
             <span className="mr-2">{getStatusIcon(order.status)}</span>
             <span
               className={`px-3 py-1 rounded-full text-sm font-medium ${
-                order.status.toLowerCase() === "completed"
+                order.status.toLowerCase() === "completed" || order.status.toLowerCase() === "paid"
                   ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                   : order.status.toLowerCase() === "cancelled"
                   ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
@@ -191,7 +217,7 @@ const OrderDetailsPage = () => {
                 <span>
                   {formatCurrency(
                     order.products.reduce(
-                      (sum, item) => sum + parseFloat(item.price.$numberDecimal) * item.quantity,
+                      (sum, item) => sum + getItemPrice(item) * item.quantity,
                       0
                     )
                   )}
@@ -202,11 +228,11 @@ const OrderDetailsPage = () => {
                 <span className="text-green-600 dark:text-green-400">
                   {formatCurrency(
                     order.products.reduce(
-                      (sum, item) =>
-                        sum +
-                        (parseFloat(item.originalPrice?.$numberDecimal || item.price.$numberDecimal) -
-                          parseFloat(item.price.$numberDecimal)) *
-                          item.quantity,
+                      (sum, item) => {
+                        const originalPrice = getPrice(item.originalPrice) || getItemPrice(item);
+                        const currentPrice = getItemPrice(item);
+                        return sum + Math.max(0, (originalPrice - currentPrice) * item.quantity);
+                      },
                       0
                     )
                   )}
@@ -214,7 +240,15 @@ const OrderDetailsPage = () => {
               </div>
               <div className="flex justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                 <span className="font-bold">Total</span>
-                <span className="font-bold">{formatCurrency(order.totalAmount)}</span>
+                <span className="font-bold">
+                  {formatCurrency(
+                    order.totalAmount || 
+                    order.products.reduce(
+                      (sum, item) => sum + getItemPrice(item) * item.quantity,
+                      0
+                    )
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -263,7 +297,7 @@ const OrderDetailsPage = () => {
                 className="flex pb-6 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0"
               >
                 <div className="w-24 h-24 mr-4 overflow-hidden rounded-lg">
-                  {item.productId.images?.[0] ? (
+                  {item.productId?.images?.[0] ? (
                     <img
                       src={item.productId.images[0]}
                       alt={item.productId.title}
@@ -276,25 +310,23 @@ const OrderDetailsPage = () => {
                   )}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold">{item.productId.title}</h3>
+                  <h3 className="font-bold">{item.productId?.title || 'Product'}</h3>
                   <p className="text-gray-600 dark:text-gray-400">
                     Quantity: {item.quantity}
                   </p>
                   <div className="flex justify-between mt-2">
                     <div>
                       <span className="font-medium">
-                        {formatCurrency(parseFloat(item.price.$numberDecimal))}
+                        {formatCurrency(getItemPrice(item))}
                       </span>
-                      {item.originalPrice && (
+                      {item.originalPrice && getPrice(item.originalPrice) > getItemPrice(item) && (
                         <span className="ml-2 text-sm text-gray-500 line-through dark:text-gray-400">
-                          {formatCurrency(parseFloat(item.originalPrice.$numberDecimal))}
+                          {formatCurrency(getPrice(item.originalPrice))}
                         </span>
                       )}
                     </div>
                     <div className="font-medium">
-                      {formatCurrency(
-                        parseFloat(item.price.$numberDecimal) * item.quantity
-                      )}
+                      {formatCurrency(getItemPrice(item) * item.quantity)}
                     </div>
                   </div>
                 </div>

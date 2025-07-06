@@ -761,3 +761,77 @@ export const getOrdersByUser = async (req, res) => {
     });
   }
 };
+
+export const getOrderByIdUser = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+
+    // Find order by ID and populate necessary fields
+    const order = await Order.findById(orderId)
+      .populate({
+        path: 'consumerId',
+        select: 'name email'
+      })
+      .populate({
+        path: 'products.productId',
+        select: 'title price images'
+      });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    // Process the order data with proper price calculations
+    const processedOrder = {
+      ...order._doc,
+      totalAmount: convertDecimal128(order.totalAmount),
+      products: order.products.map(item => {
+        const originalPrice = item.productId.price;
+        const discount = item.discount || 0;
+        
+        // Calculate discounted price
+        const discountedPrice = originalPrice - (originalPrice * discount / 100);
+        
+        return {
+          ...item._doc,
+          price: discountedPrice, // This should be the final price after discount
+          originalPrice: originalPrice, // Store original price for reference
+          discount: discount,
+          quantity: item.quantity,
+          totalItemPrice: discountedPrice * item.quantity
+        };
+      })
+    };
+
+    // Recalculate total amount based on processed products
+    const calculatedTotal = processedOrder.products.reduce((sum, item) => {
+      return sum + item.totalItemPrice;
+    }, 0);
+
+    // Update total amount with calculated value
+    processedOrder.totalAmount = calculatedTotal;
+
+    return res.json({
+      success: true,
+      order: processedOrder
+    });
+  } catch (error) {
+    console.error('Error fetching order:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch order details',
+      error: error.message
+    });
+  }
+};
+
+// Helper function to convert Decimal128 to number
+const convertDecimal128 = (value) => {
+  if (!value) return 0;
+  if (value.$numberDecimal) return parseFloat(value.$numberDecimal);
+  if (typeof value === 'string') return parseFloat(value);
+  return parseFloat(value) || 0;
+};

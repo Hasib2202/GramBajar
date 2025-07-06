@@ -7,7 +7,8 @@ import {
   createOrder,
   processPayment,
   getOrderDetails,
-  getOrdersByUser
+  getOrdersByUser,
+  getOrderByIdUser
 } from '../controllers/orderController.js';
 import { verifyUser, verifyAdmin } from '../middleware/authMiddleware.js';
 
@@ -18,6 +19,7 @@ router.post('/', verifyUser, createOrder);
 router.post('/:id/pay', verifyUser, processPayment);
 router.get('/user/:id', verifyUser, getOrderDetails); // Changed to /user/:id
 router.get('/user/:id/orders', verifyUser, getOrdersByUser); // ← new: list all orders
+router.get('/:id', verifyUser, getOrderByIdUser);
 
 // Admin routes (prefixed with /admin)
 router.get('/admin', verifyAdmin, getOrders);
