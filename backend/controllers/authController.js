@@ -341,6 +341,12 @@ export const googleCallback = (req, res, next) => {
       return res.redirect(`${process.env.FRONTEND_URL}/login?error=google-auth-failed`);
     }
 
+    // Verify state matches what was sent
+    // const storedState = sessionStorage.getItem('oauth_state');
+    // if (storedState !== req.query.state) {
+    //   return res.redirect(`${process.env.FRONTEND_URL}/login?error=state_mismatch`);
+    // }
+
     // Generate JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN
@@ -349,9 +355,9 @@ export const googleCallback = (req, res, next) => {
     // Set cookie
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production', // Must be true in production
       maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Critical fix
       path: '/'
     });
 

@@ -16,7 +16,6 @@ const FiStar = () => <span>⭐</span>;
 export default function ProductDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  // const [darkMode, setDarkMode] = useState(false);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -24,14 +23,9 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const { addToCart } = useCart();
+  
+  // CORRECTED: Use theme context properly
   const { darkMode } = useTheme();
-  // const { darkMode, toggleTheme } = useTheme();
-
-  // useEffect(() => {
-  //   const isDark = false;
-  //   setDarkMode(isDark);
-  //   document.documentElement.classList.toggle('dark', isDark);
-  // }, []);
 
   useEffect(() => {
     if (id) {
@@ -51,7 +45,6 @@ export default function ProductDetailPage() {
       const data = await response.json();
       if (data.success) {
         setProduct(data.product);
-        // FIX 1: Pass category ID instead of full object
         fetchRelatedProducts(data.product.category?._id);
       } else {
         setError(true);
@@ -64,7 +57,6 @@ export default function ProductDetailPage() {
   };
 
   const fetchRelatedProducts = async (categoryId) => {
-    // FIX 1: Only fetch if categoryId exists
     if (!categoryId) return;
     
     try {
@@ -80,19 +72,19 @@ export default function ProductDetailPage() {
     }
   };
 
-  const toggleTheme = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    document.documentElement.classList.toggle('dark', newMode);
-  };
-
   const handleQuantityChange = (value) => {
+    if (!product) return;
     const newValue = Math.max(1, Math.min(product.stock, value));
     setQuantity(newValue);
   };
 
   const handleAddToCart = () => {
-    // FIX 2: Add quantity to cart item
+    if (!product) return;
+    
+    const discountPrice = product.discount > 0 
+      ? product.price * (1 - product.discount / 100)
+      : product.price;
+
     addToCart({
       id: product._id,
       name: product.title,
@@ -106,11 +98,10 @@ export default function ProductDetailPage() {
     toast.success(`${quantity} ${product.title} added to cart!`);
   };
 
-
   if (loading) {
     return (
       <div className={`min-h-screen ${darkMode ? 'bg-slate-900' : 'bg-gradient-to-br from-green-50 to-emerald-50'}`}>
-        <Navbar darkMode={darkMode} toggleTheme={toggleTheme} />
+        <Navbar />
         <div className="px-4 py-16 mx-auto max-w-7xl">
           <div className="flex flex-col gap-8 lg:flex-row">
             <div className={`w-full lg:w-1/2 aspect-square rounded-xl animate-pulse ${darkMode ? 'bg-slate-800' : 'bg-white'}`}></div>
@@ -121,7 +112,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
-        <Footer darkMode={darkMode} />
+        <Footer />
       </div>
     );
   }
@@ -129,7 +120,7 @@ export default function ProductDetailPage() {
   if (error || !product) {
     return (
       <div className={`min-h-screen ${darkMode ? 'bg-slate-900' : 'bg-gradient-to-br from-green-50 to-emerald-50'}`}>
-        <Navbar darkMode={darkMode} toggleTheme={toggleTheme} />
+        <Navbar />
         <div className="max-w-3xl px-4 py-32 mx-auto text-center">
           <div className={`p-8 rounded-xl ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
             <h1 className={`text-3xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-800'}`}>
@@ -143,7 +134,7 @@ export default function ProductDetailPage() {
             </button>
           </div>
         </div>
-        <Footer darkMode={darkMode} />
+        <Footer />
       </div>
     );
   }
@@ -159,7 +150,7 @@ export default function ProductDetailPage() {
         <meta name="description" content={product.description || product.title} />
       </Head>
 
-      <Navbar darkMode={darkMode} toggleTheme={toggleTheme} />
+      <Navbar />
 
       {/* Breadcrumb */}
       <div className={`py-4 px-4 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
@@ -401,7 +392,7 @@ export default function ProductDetailPage() {
         )}
       </div>
 
-      <Footer darkMode={darkMode} />
+      <Footer />
     </div>
   );
 }

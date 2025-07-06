@@ -39,6 +39,11 @@ const ProfilePage = () => {
   const [imageUploadSuccess, setImageUploadSuccess] = useState("");
   const [imageUploadError, setImageUploadError] = useState("");
 
+  // Orders state
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState("");
+
   // Hooks
   const router = useRouter();
   const { darkMode, toggleTheme } = useTheme();
@@ -52,7 +57,7 @@ const ProfilePage = () => {
         return;
       }
 
-      const { token } = JSON.parse(stored);
+      const { token, id } = JSON.parse(stored);
       if (!token) {
         router.replace("/login");
         return;
@@ -99,6 +104,13 @@ const ProfilePage = () => {
     fetchUserProfile();
   }, [router]);
 
+  // Fetch orders when orders view is active
+  useEffect(() => {
+    if (currentView === "orders" && user?._id) {
+      fetchUserOrders();
+    }
+  }, [currentView, user]);
+
   // Event Handlers
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -140,7 +152,53 @@ const ProfilePage = () => {
   const handleLogout = () => {
     localStorage.removeItem("user");
     router.push("/login");
-    
+  };
+
+  // Fetch user orders
+  const fetchUserOrders = async () => {
+    setOrdersLoading(true);
+    setOrdersError("");
+
+    try {
+      const stored = localStorage.getItem("user");
+      if (!stored) {
+        router.replace("/login");
+        return;
+      }
+
+      const { token, id } = JSON.parse(stored);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/user/${id}/orders`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+
+      const data = await response.json();
+
+      // Convert Decimal128 to numbers
+      const processedOrders = data.orders.map(order => ({
+        ...order,
+        totalAmount: order.totalAmount.$numberDecimal
+          ? parseFloat(order.totalAmount.$numberDecimal)
+          : order.totalAmount || 0
+      }));
+
+      // Set the processed orders, not the original data.orders
+      setOrders(processedOrders);
+    } catch (err) {
+      setOrdersError(err.message || 'Failed to load orders');
+    } finally {
+      setOrdersLoading(false);
+    }
   };
 
   // API Functions
@@ -371,9 +429,8 @@ const ProfilePage = () => {
 
   return (
     <div
-      className={`min-h-screen flex flex-col ${
-        darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
-      }`}
+      className={`min-h-screen flex flex-col ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+        }`}
     >
       <Head>
         <title>Profile - GramBajar | Fresh Groceries Online</title>
@@ -444,7 +501,13 @@ const ProfilePage = () => {
             )}
 
             {currentView === "orders" && (
-              <OrdersView router={router} darkMode={darkMode} />
+              <OrdersView
+                router={router}
+                darkMode={darkMode}
+                orders={orders}
+                loading={ordersLoading}
+                error={ordersError}
+              />
             )}
           </div>
         </div>
@@ -485,9 +548,8 @@ const ProfileSidebar = ({
   <div className="w-full lg:w-1/4">
     {/* Profile Card */}
     <div
-      className={`rounded-2xl shadow-xl overflow-hidden ${
-        darkMode ? "bg-gray-800" : "bg-white"
-      }`}
+      className={`rounded-2xl shadow-xl overflow-hidden ${darkMode ? "bg-gray-800" : "bg-white"
+        }`}
     >
       <div className="relative h-32 bg-gradient-to-r from-green-400 to-blue-500"></div>
 
@@ -531,7 +593,7 @@ const ProfileSidebar = ({
               />
               <FiCamera className="text-blue-600 dark:text-blue-400" />
             </label>
-            
+
             {/* Save Picture Button - Only shows when a new image is selected */}
             {selectedImage && (
               <button
@@ -567,7 +629,7 @@ const ProfileSidebar = ({
             )}
           </div>
         </div>
-        
+
         {/* Image Upload Messages */}
         <div className="text-center mt-2 min-h-[2rem]">
           {imageUploadSuccess && (
@@ -603,11 +665,10 @@ const ProfileSidebar = ({
           ].map(({ key, icon: Icon, label }) => (
             <button
               key={key}
-              className={`flex items-center w-full p-3 rounded-xl transition-all ${
-                currentView === key
+              className={`flex items-center w-full p-3 rounded-xl transition-all ${currentView === key
                   ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
+                }`}
               onClick={() => setCurrentView(key)}
             >
               <Icon className="mr-3" />
@@ -631,9 +692,8 @@ const ProfileSidebar = ({
 
     {/* Account Verified Card */}
     <div
-      className={`mt-6 rounded-2xl shadow-xl p-6 ${
-        darkMode ? "bg-gray-800" : "bg-white"
-      }`}
+      className={`mt-6 rounded-2xl shadow-xl p-6 ${darkMode ? "bg-gray-800" : "bg-white"
+        }`}
     >
       <div className="flex items-center">
         <div className="p-3 bg-blue-100 rounded-xl dark:bg-blue-900/30">
@@ -665,9 +725,8 @@ const ProfileSidebar = ({
 
 const ProfileView = ({ user, router, darkMode, formattedJoinDate }) => (
   <div
-    className={`rounded-2xl shadow-xl overflow-hidden ${
-      darkMode ? "bg-gray-800" : "bg-white"
-    }`}
+    className={`rounded-2xl shadow-xl overflow-hidden ${darkMode ? "bg-gray-800" : "bg-white"
+      }`}
   >
     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
       <h2 className="text-2xl font-bold">Personal Information</h2>
@@ -706,7 +765,12 @@ const ProfileView = ({ user, router, darkMode, formattedJoinDate }) => (
       {/* Recent Orders Section */}
       <div className="pt-6 mt-8 border-t border-gray-200 dark:border-gray-700">
         <h3 className="mb-4 text-lg font-semibold">Recent Orders</h3>
-        <OrdersTable router={router} />
+        <OrdersTable
+          router={router}
+          orders={[]}
+          loading={false}
+          error={null}
+        />
       </div>
     </div>
   </div>
@@ -723,9 +787,8 @@ const EditProfileView = ({
   darkMode,
 }) => (
   <div
-    className={`rounded-2xl shadow-xl overflow-hidden ${
-      darkMode ? "bg-gray-800" : "bg-white"
-    }`}
+    className={`rounded-2xl shadow-xl overflow-hidden ${darkMode ? "bg-gray-800" : "bg-white"
+      }`}
   >
     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
       <h2 className="text-2xl font-bold">Edit Profile</h2>
@@ -783,9 +846,8 @@ const PasswordView = ({
   darkMode,
 }) => (
   <div
-    className={`rounded-2xl shadow-xl overflow-hidden ${
-      darkMode ? "bg-gray-800" : "bg-white"
-    }`}
+    className={`rounded-2xl shadow-xl overflow-hidden ${darkMode ? "bg-gray-800" : "bg-white"
+      }`}
   >
     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
       <h2 className="text-2xl font-bold">Change Password</h2>
@@ -843,11 +905,10 @@ const PasswordView = ({
   </div>
 );
 
-const OrdersView = ({ router, darkMode }) => (
+const OrdersView = ({ router, darkMode, orders, loading, error }) => (
   <div
-    className={`rounded-2xl shadow-xl overflow-hidden ${
-      darkMode ? "bg-gray-800" : "bg-white"
-    }`}
+    className={`rounded-2xl shadow-xl overflow-hidden ${darkMode ? "bg-gray-800" : "bg-white"
+      }`}
   >
     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
       <h2 className="text-2xl font-bold">Your Orders</h2>
@@ -857,7 +918,12 @@ const OrdersView = ({ router, darkMode }) => (
     </div>
 
     <div className="p-6">
-      <OrdersTable router={router} />
+      <OrdersTable
+        router={router}
+        orders={orders}
+        loading={loading}
+        error={error}
+      />
     </div>
   </div>
 );
@@ -949,29 +1015,131 @@ const FormActions = ({ onCancel, loading, loadingText, submitText }) => (
   </div>
 );
 
-const OrdersTable = ({ router }) => (
-  <div className="overflow-hidden border border-gray-200 rounded-xl dark:border-gray-700">
-    <div className="grid grid-cols-4 px-4 py-3 text-sm font-medium bg-gray-50 dark:bg-gray-800/50">
-      <div>Order ID</div>
-      <div>Date</div>
-      <div>Status</div>
-      <div>Total</div>
-    </div>
+const OrdersTable = ({ router, orders, loading, error }) => {
+  // Status colors mapping
+  const statusColors = {
+    pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+    processing: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    shipped: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
+    delivered: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+    cancelled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    refunded: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+    paid: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  };
 
-    <div className="p-8 text-center">
-      <FiShoppingBag className="mx-auto mb-4 text-4xl text-gray-400" />
-      <p className="text-lg font-medium">No orders yet</p>
-      <p className="mt-2 text-gray-600 dark:text-gray-400">
-        Your completed orders will appear here
-      </p>
-      <button
-        onClick={() => router.push("/")}
-        className="mt-4 px-5 py-2.5 bg-gradient-to-r from-green-500 to-blue-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-blue-700 transition-colors"
-      >
-        Start Shopping
-      </button>
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'BDT'
+    }).format(amount);
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="w-12 h-12 border-t-2 border-blue-500 rounded-full animate-spin"></div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">
+          Loading your orders...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <FiXCircle className="mx-auto mb-4 text-4xl text-red-500" />
+        <p className="text-lg font-medium text-red-600 dark:text-red-400">
+          {error}
+        </p>
+        <button
+          onClick={() => router.reload()}
+          className="px-4 py-2 mt-4 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (!orders || orders.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <FiShoppingBag className="mx-auto mb-4 text-4xl text-gray-400" />
+        <p className="text-lg font-medium">No orders yet</p>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">
+          Your completed orders will appear here
+        </p>
+        <button
+          onClick={() => router.push("/")}
+          className="mt-4 px-5 py-2.5 bg-gradient-to-r from-green-500 to-blue-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-blue-700 transition-colors"
+        >
+          Start Shopping
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden border border-gray-200 rounded-xl dark:border-gray-700">
+      <div className="grid grid-cols-5 px-4 py-3 text-sm font-medium bg-gray-50 dark:bg-gray-800/50 md:grid-cols-6">
+        <div className="hidden md:block">Order ID</div>
+        <div>Date</div>
+        <div>Items</div>
+        <div>Status</div>
+        <div>Total</div>
+        <div>Actions</div>
+      </div>
+
+      {orders.map((order) => (
+        <div
+          key={order._id}
+          className="grid grid-cols-5 px-4 py-3 border-t border-gray-200 dark:border-gray-700 md:grid-cols-6"
+        >
+          <div className="hidden font-mono text-sm text-gray-500 md:block dark:text-gray-400">
+            #{order._id.substring(0, 8)}
+          </div>
+          <div className="text-sm">
+            {formatDate(order.createdAt)}
+          </div>
+          <div className="text-sm">
+            {order.products.length} item{order.products.length > 1 ? 's' : ''}
+          </div>
+          <div>
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[order.status.toLowerCase()] ||
+                "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                }`}
+            >
+              {order.status}
+            </span>
+          </div>
+          <div className="font-medium">
+            {formatCurrency(order.totalAmount)}
+          </div>
+          <div>
+            <button
+              onClick={() => router.push(`/orders/${order._id}`)}
+              className="px-3 py-1.5 text-xs font-medium bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
+            >
+              View
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
-  </div>
-);
+  );
+};
 
 export default ProfilePage;

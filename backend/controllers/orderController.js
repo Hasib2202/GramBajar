@@ -726,3 +726,38 @@ export const getOrderDetails = async (req, res) => {
     });
   }
 };
+
+// Get orders by user
+export const getOrdersByUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Optional: ensure users only fetch their own orders
+    // if (req.user.id !== userId && !req.user.isAdmin) {
+    //   return res.status(403).json({ success: false, message: 'Forbidden' });
+    // }
+
+    const orders = await Order.find({ consumerId: userId })
+      .sort({ createdAt: -1 })  // newest first
+      .populate({
+        path: 'consumerId',
+        select: 'name email'
+      })
+      .populate({
+        path: 'products.productId',
+        select: 'title price images'
+      });
+
+    return res.json({
+      success: true,
+      orders
+    });
+  } catch (error) {
+    console.error('Error in getOrdersByUser:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user orders',
+      error: error.message
+    });
+  }
+};
