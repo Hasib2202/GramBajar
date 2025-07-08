@@ -43,6 +43,11 @@ const ProfilePage = () => {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState("");
+  
+  // Recent orders state
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [recentOrdersLoading, setRecentOrdersLoading] = useState(false);
+  const [recentOrdersError, setRecentOrdersError] = useState("");
 
   // Hooks
   const router = useRouter();
@@ -104,6 +109,13 @@ const ProfilePage = () => {
     fetchUserProfile();
   }, [router]);
 
+  // Fetch recent orders when user data is available
+  useEffect(() => {
+    if (user?._id) {
+      fetchRecentOrders();
+    }
+  }, [user]);
+
   // Fetch orders when orders view is active
   useEffect(() => {
     if (currentView === "orders" && user?._id) {
@@ -154,7 +166,53 @@ const ProfilePage = () => {
     router.push("/login");
   };
 
-  // Fetch user orders
+  // Fetch recent orders (last 3 orders)
+  const fetchRecentOrders = async () => {
+    setRecentOrdersLoading(true);
+    setRecentOrdersError("");
+
+    try {
+      const stored = localStorage.getItem("user");
+      if (!stored) {
+        router.replace("/login");
+        return;
+      }
+
+      const { token, id } = JSON.parse(stored);
+      
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/user/${id}/orders?limit=3`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch recent orders');
+      }
+
+      const data = await response.json();
+      
+      // Convert Decimal128 to numbers
+      const processedOrders = data.orders.map(order => ({
+        ...order,
+        totalAmount: order.totalAmount.$numberDecimal 
+          ? parseFloat(order.totalAmount.$numberDecimal) 
+          : order.totalAmount || 0
+      }));
+      
+      setRecentOrders(processedOrders);
+    } catch (err) {
+      setRecentOrdersError(err.message || 'Failed to load recent orders');
+    } finally {
+      setRecentOrdersLoading(false);
+    }
+  };
+
+  // Fetch all user orders
   const fetchUserOrders = async () => {
     setOrdersLoading(true);
     setOrdersError("");
@@ -192,7 +250,6 @@ const ProfilePage = () => {
           : order.totalAmount || 0
       }));
 
-      // Set the processed orders, not the original data.orders
       setOrders(processedOrders);
     } catch (err) {
       setOrdersError(err.message || 'Failed to load orders');
@@ -429,8 +486,9 @@ const ProfilePage = () => {
 
   return (
     <div
-      className={`min-h-screen flex flex-col ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
-        }`}
+      className={`min-h-screen flex flex-col ${
+        darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+      }`}
     >
       <Head>
         <title>Profile - GramBajar | Fresh Groceries Online</title>
@@ -472,6 +530,9 @@ const ProfilePage = () => {
                 router={router}
                 darkMode={darkMode}
                 formattedJoinDate={formatJoinDate(user.createdAt)}
+                recentOrders={recentOrders}
+                loading={recentOrdersLoading}
+                error={recentOrdersError}
               />
             )}
 
@@ -548,8 +609,9 @@ const ProfileSidebar = ({
   <div className="w-full lg:w-1/4">
     {/* Profile Card */}
     <div
-      className={`rounded-2xl shadow-xl overflow-hidden ${darkMode ? "bg-gray-800" : "bg-white"
-        }`}
+      className={`rounded-2xl shadow-xl overflow-hidden ${
+        darkMode ? "bg-gray-800" : "bg-white"
+      }`}
     >
       <div className="relative h-32 bg-gradient-to-r from-green-400 to-blue-500"></div>
 
@@ -593,7 +655,7 @@ const ProfileSidebar = ({
               />
               <FiCamera className="text-blue-600 dark:text-blue-400" />
             </label>
-
+            
             {/* Save Picture Button - Only shows when a new image is selected */}
             {selectedImage && (
               <button
@@ -629,7 +691,7 @@ const ProfileSidebar = ({
             )}
           </div>
         </div>
-
+        
         {/* Image Upload Messages */}
         <div className="text-center mt-2 min-h-[2rem]">
           {imageUploadSuccess && (
@@ -665,10 +727,11 @@ const ProfileSidebar = ({
           ].map(({ key, icon: Icon, label }) => (
             <button
               key={key}
-              className={`flex items-center w-full p-3 rounded-xl transition-all ${currentView === key
+              className={`flex items-center w-full p-3 rounded-xl transition-all ${
+                currentView === key
                   ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                   : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
+              }`}
               onClick={() => setCurrentView(key)}
             >
               <Icon className="mr-3" />
@@ -692,8 +755,9 @@ const ProfileSidebar = ({
 
     {/* Account Verified Card */}
     <div
-      className={`mt-6 rounded-2xl shadow-xl p-6 ${darkMode ? "bg-gray-800" : "bg-white"
-        }`}
+      className={`mt-6 rounded-2xl shadow-xl p-6 ${
+        darkMode ? "bg-gray-800" : "bg-white"
+      }`}
     >
       <div className="flex items-center">
         <div className="p-3 bg-blue-100 rounded-xl dark:bg-blue-900/30">
@@ -723,10 +787,19 @@ const ProfileSidebar = ({
   </div>
 );
 
-const ProfileView = ({ user, router, darkMode, formattedJoinDate }) => (
+const ProfileView = ({ 
+  user, 
+  router, 
+  darkMode, 
+  formattedJoinDate,
+  recentOrders,
+  loading,
+  error
+}) => (
   <div
-    className={`rounded-2xl shadow-xl overflow-hidden ${darkMode ? "bg-gray-800" : "bg-white"
-      }`}
+    className={`rounded-2xl shadow-xl overflow-hidden ${
+      darkMode ? "bg-gray-800" : "bg-white"
+    }`}
   >
     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
       <h2 className="text-2xl font-bold">Personal Information</h2>
@@ -741,7 +814,6 @@ const ProfileView = ({ user, router, darkMode, formattedJoinDate }) => (
         <InfoCard title="Basic Information" darkMode={darkMode}>
           <InfoField label="Full Name" value={user.name || "Not provided"} />
           <InfoField label="Email Address" value={user.email} />
-          {/* <InfoField label="Account Type" value="Google" /> */}
         </InfoCard>
 
         {/* Account Details Card */}
@@ -758,18 +830,22 @@ const ProfileView = ({ user, router, darkMode, formattedJoinDate }) => (
             </div>
           </div>
           <InfoField label="Member Since" value={formattedJoinDate} />
-          <InfoField label="Orders Completed" value="0" />
+          <InfoField 
+            label="Total Orders" 
+            value={recentOrders.length > 0 ? recentOrders.length : "0"} 
+          />
         </InfoCard>
       </div>
 
       {/* Recent Orders Section */}
       <div className="pt-6 mt-8 border-t border-gray-200 dark:border-gray-700">
         <h3 className="mb-4 text-lg font-semibold">Recent Orders</h3>
-        <OrdersTable
-          router={router}
-          orders={[]}
-          loading={false}
-          error={null}
+        <RecentOrdersTable 
+          router={router} 
+          orders={recentOrders}
+          loading={loading}
+          error={error}
+          darkMode={darkMode}
         />
       </div>
     </div>
@@ -787,8 +863,9 @@ const EditProfileView = ({
   darkMode,
 }) => (
   <div
-    className={`rounded-2xl shadow-xl overflow-hidden ${darkMode ? "bg-gray-800" : "bg-white"
-      }`}
+    className={`rounded-2xl shadow-xl overflow-hidden ${
+      darkMode ? "bg-gray-800" : "bg-white"
+    }`}
   >
     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
       <h2 className="text-2xl font-bold">Edit Profile</h2>
@@ -846,8 +923,9 @@ const PasswordView = ({
   darkMode,
 }) => (
   <div
-    className={`rounded-2xl shadow-xl overflow-hidden ${darkMode ? "bg-gray-800" : "bg-white"
-      }`}
+    className={`rounded-2xl shadow-xl overflow-hidden ${
+      darkMode ? "bg-gray-800" : "bg-white"
+    }`}
   >
     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
       <h2 className="text-2xl font-bold">Change Password</h2>
@@ -907,8 +985,9 @@ const PasswordView = ({
 
 const OrdersView = ({ router, darkMode, orders, loading, error }) => (
   <div
-    className={`rounded-2xl shadow-xl overflow-hidden ${darkMode ? "bg-gray-800" : "bg-white"
-      }`}
+    className={`rounded-2xl shadow-xl overflow-hidden ${
+      darkMode ? "bg-gray-800" : "bg-white"
+    }`}
   >
     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
       <h2 className="text-2xl font-bold">Your Orders</h2>
@@ -931,7 +1010,9 @@ const OrdersView = ({ router, darkMode, orders, loading, error }) => (
 // Utility Components
 const InfoCard = ({ title, children, darkMode }) => (
   <div
-    className={`p-5 rounded-xl ${darkMode ? "bg-gray-700/50" : "bg-gray-50"}`}
+    className={`p-5 rounded-xl ${
+      darkMode ? "bg-gray-700/50" : "bg-gray-50"
+    }`}
   >
     <h3 className="pb-2 mb-4 text-lg font-semibold border-b border-gray-200 dark:border-gray-700">
       {title}
@@ -1014,6 +1095,129 @@ const FormActions = ({ onCancel, loading, loadingText, submitText }) => (
     </button>
   </div>
 );
+
+const RecentOrdersTable = ({ router, orders, loading, error, darkMode }) => {
+  // Status colors mapping
+  const statusColors = {
+    pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+    processing: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    shipped: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
+    delivered: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+    cancelled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    refunded: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+    paid: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  };
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'BDT'
+    }).format(amount);
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-6">
+        <div className="w-8 h-8 border-t-2 border-blue-500 rounded-full animate-spin"></div>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          Loading recent orders...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center">
+        <FiXCircle className="mx-auto mb-2 text-2xl text-red-500" />
+        <p className="text-sm font-medium text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      </div>
+    );
+  }
+
+  if (!orders || orders.length === 0) {
+    return (
+      <div className="p-4 text-center">
+        <FiShoppingBag className="mx-auto mb-2 text-2xl text-gray-400" />
+        <p className="text-sm font-medium">No recent orders</p>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          Your completed orders will appear here
+        </p>
+        <button
+          onClick={() => router.push("/")}
+          className="px-4 py-2 mt-3 text-sm font-medium text-white transition-colors rounded-lg bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
+        >
+          Start Shopping
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden border border-gray-200 rounded-xl dark:border-gray-700">
+      <div className="grid grid-cols-5 px-4 py-3 text-xs font-medium bg-gray-50 dark:bg-gray-800/50">
+        <div className="col-span-2">Order</div>
+        <div>Date</div>
+        <div>Status</div>
+        <div>Total</div>
+      </div>
+
+      {orders.map((order) => (
+        <div
+          key={order._id}
+          className="grid grid-cols-5 px-4 py-3 border-t border-gray-200 dark:border-gray-700"
+        >
+          <div className="col-span-2">
+            <div className="text-sm font-medium truncate">
+              #{order._id.substring(0, 8)}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {order.products.length} item{order.products.length > 1 ? 's' : ''}
+            </div>
+          </div>
+          <div className="text-xs">
+            {formatDate(order.createdAt)}
+          </div>
+          <div>
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                statusColors[order.status.toLowerCase()] || 
+                "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+              }`}
+            >
+              {order.status}
+            </span>
+          </div>
+          <div className="text-sm font-medium">
+            {formatCurrency(order.totalAmount)}
+          </div>
+        </div>
+      ))}
+
+      <div className="p-3 text-center border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => router.push("/profile?view=orders")}
+          className="flex items-center justify-center w-full text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          View all orders <FiChevronRight className="ml-1" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const OrdersTable = ({ router, orders, loading, error }) => {
   // Status colors mapping
@@ -1118,9 +1322,10 @@ const OrdersTable = ({ router, orders, loading, error }) => {
           </div>
           <div>
             <span
-              className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[order.status.toLowerCase()] ||
+              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                statusColors[order.status.toLowerCase()] ||
                 "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                }`}
+              }`}
             >
               {order.status}
             </span>

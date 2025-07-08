@@ -731,14 +731,28 @@ export const getOrderDetails = async (req, res) => {
 export const getOrdersByUser = async (req, res) => {
   try {
     const userId = req.params.id;
+    const limit = parseInt(req.query.limit) || null;
 
-    // Optional: ensure users only fetch their own orders
-    // if (req.user.id !== userId && !req.user.isAdmin) {
-    //   return res.status(403).json({ success: false, message: 'Forbidden' });
-    // }
+    // Debugging: Log the user information
+    console.log('Authenticated User:', req.user);
+    console.log('Requested User ID:', userId);
 
-    const orders = await Order.find({ consumerId: userId })
-      .sort({ createdAt: -1 })  // newest first
+    // Verify user is requesting their own orders or is admin
+    if (req.user._id.toString() !== userId && !req.user.isAdmin) {
+      console.log('Authorization failed:', {
+        userId: req.user._id,
+        requestedId: userId,
+        isAdmin: req.user.isAdmin
+      });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Unauthorized to access these orders' 
+      });
+    }
+
+    // Build query
+    let query = Order.find({ consumerId: userId })
+      .sort({ createdAt: -1 }) // Newest first
       .populate({
         path: 'consumerId',
         select: 'name email'
@@ -748,9 +762,38 @@ export const getOrdersByUser = async (req, res) => {
         select: 'title price images'
       });
 
+    // Apply limit if specified
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const orders = await query.exec();
+    const totalOrders = await Order.countDocuments({ consumerId: userId });
+
+    // Process orders to convert Decimal128 to numbers
+    const processedOrders = orders.map(order => ({
+      ...order._doc,
+      _id: order._id,
+      totalAmount: order.totalAmount?.$numberDecimal 
+        ? parseFloat(order.totalAmount.$numberDecimal) 
+        : order.totalAmount || 0,
+      products: order.products.map(product => ({
+        ...product._doc,
+        price: product.price?.$numberDecimal 
+          ? parseFloat(product.price.$numberDecimal) 
+          : product.price || 0,
+        originalPrice: product.originalPrice?.$numberDecimal 
+          ? parseFloat(product.originalPrice.$numberDecimal) 
+          : product.originalPrice || null
+      })),
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt
+    }));
+
     return res.json({
       success: true,
-      orders
+      orders: processedOrders,
+      totalOrders
     });
   } catch (error) {
     console.error('Error in getOrdersByUser:', error);
