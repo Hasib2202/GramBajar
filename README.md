@@ -52,7 +52,7 @@ npm install
 npm run dev
 
 # Backend
-npm run start
+npm run dev
 ````
 
 ---
