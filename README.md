@@ -97,7 +97,26 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api
 
 ## 📸 Screenshots
 
-> *Add screenshots of your Home page, Product page, Cart, and Admin Dashboard for a better preview.*
+![Image](https://github.com/user-attachments/assets/684f2c78-b222-420f-bab5-5c41436453ca)
+![Image](https://github.com/user-attachments/assets/4418910f-c5b4-4002-91c3-43efb46623e8)
+![Image](https://github.com/user-attachments/assets/8ae3ce6a-3af5-4efa-b63c-a8787210b1ec)
+![Image](https://github.com/user-attachments/assets/99c93514-7753-4cb1-8242-8e17979738ac)
+![Image](https://github.com/user-attachments/assets/3b9c0947-5fd7-41f5-b4e7-6317a187fd01)
+![Image](https://github.com/user-attachments/assets/d84d7f39-c06a-4a7b-a303-386d87a1cf35)
+![Image](https://github.com/user-attachments/assets/1b163291-d9d1-4f13-932e-9e87ea355fdd)
+![Image](https://github.com/user-attachments/assets/a2b58ed0-b18c-4682-8da7-1d5e3961809d)
+![Image](https://github.com/user-attachments/assets/c6f11b98-88f5-47d4-ad06-e576f14ccabe)
+![Image](https://github.com/user-attachments/assets/9237cc7f-d04b-4146-bea3-046629cb8027)
+![Image](https://github.com/user-attachments/assets/bcbddd91-bd80-4914-8365-56e190d10c7c)
+![Image](https://github.com/user-attachments/assets/9a66750b-47de-4d77-8770-141928e3457b)
+![Image](https://github.com/user-attachments/assets/bfdd2532-b7e6-42fe-9319-36a451466f81)
+![Image](https://github.com/user-attachments/assets/0b30a619-c405-45b2-abb6-483343e442a7)
+![Image](https://github.com/user-attachments/assets/d82475e2-ba4a-430b-8d9e-efa0778b1377)
+![Image](https://github.com/user-attachments/assets/a29f1c84-43ff-40e8-97b7-dbf73b553d6a)
+![Image](https://github.com/user-attachments/assets/2348d944-cad9-4b0e-b6af-935daa772cc8)
+![Image](https://github.com/user-attachments/assets/24dae7b7-6b81-4350-a244-f5ff59b04c63)
+<img width="1432" height="917" alt="Image" src="https://github.com/user-attachments/assets/63ac317a-98d7-4ed3-8c45-5736d69303a4" />
+<img width="1432" height="917" alt="Image" src="https://github.com/user-attachments/assets/b293f63c-d708-44b6-bbe9-dd19986a2f20" />
 
 ---
 
