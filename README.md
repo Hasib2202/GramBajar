@@ -105,7 +105,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api
 
 **Md. Mostofa Hasib**
 🔗 [LinkedIn](https://www.linkedin.com/in/md-mostofa-hasib-5b4027184/)
-🌐 [Portfolio](https://mostofa-hasib.dev)
+🌐 [Portfolio](https://mostofahasib.vercel.app/)
 
 ---
 
